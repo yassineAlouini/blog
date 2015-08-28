@@ -10,7 +10,7 @@ config = {
   // When running Ghost in the wild, use the production environment
   // Configure your URL and mail settings here
   production: {
-    url: 'http://my-ghost-blog.com',
+    url: 'http://dsotb.com',
     mail: {},
     database: {
       client: 'sqlite3',
@@ -32,7 +32,7 @@ config = {
   development: {
     // The url to use when providing links to the site, E.g. in RSS and email.
     // Change this to your Ghost blogs published URL.
-    url: 'http://localhost:2368',
+    url: 'http://dsotb.com',
 
     // Example mail config
     // Visit http://support.ghost.org/mail for instructions
