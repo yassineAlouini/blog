@@ -22,6 +22,7 @@ self-contained HTML page under `posts/` with the original narrative, math and co
 - **[EfficientDet meets PyTorch Lightning](posts/efficientdet-meets-pytorch-lightning.html)** —
   object detection with EfficientDet wrapped in a clean Lightning training loop.
   ([Kaggle](https://www.kaggle.com/code/yassinealouini/efficientdet-meets-pytorch-lightning))
+- **[LeCun's World Models](posts/lecun-world-models.html)** — *also cross-listed here* (see Research).
 
 ### 🎬 Video Processing
 *Working with video — codecs, frames, and the preprocessing plumbing.*
@@ -45,15 +46,23 @@ self-contained HTML page under `posts/` with the original narrative, math and co
 
 ## How it's built
 
-`build.py` is a small static-site generator (no framework). For each notebook in `_src/` it:
+`build.py` is a small static-site generator (no framework). It builds two kinds of post:
 
-- renders **markdown** cells with [mistune](https://github.com/lepture/mistune) — including
-  `$…$` math (handed to **MathJax**), tables, and notebook image attachments inlined as data URIs;
-- renders **code** (both notebook code cells and fenced code blocks inside markdown) with
+- **Notebook posts** (`POSTS`) — one Kaggle notebook each, from `_src/<slug>/<slug>.ipynb`.
+- **Markdown posts** (`MD_POSTS`) — hand-written articles from `_static/<slug>.md`
+  (e.g. the LeCun world-models digest).
+
+Both go through the same renderer and page shell:
+
+- **markdown** via [mistune](https://github.com/lepture/mistune) — including `$…$` math
+  (handed to **MathJax**), tables, and notebook image attachments inlined as data URIs;
+- **code** (notebook cells *and* fenced blocks inside markdown) via
   [Pygments](https://pygments.org/) syntax highlighting;
-- wraps everything in a branded page shell and shared CSS.
+- wrapped in a branded page shell and shared CSS.
 
-It then generates `index.html`, grouping posts into sections by their `category` field.
+It then generates `index.html`, grouping posts into sections by their `category`. A post's
+`category` may be a **string or a list**, so a post can appear in several sections (the LeCun
+digest is listed under both *Computer Vision* and *Research*). Empty sections are skipped.
 Styling lives in `assets/style.css` (watercolor theme: Fraunces / DM Sans / Caveat fonts,
 an Aegean palette, paper-grain texture) and `assets/pygments.css`.
 
@@ -62,11 +71,12 @@ an Aegean palette, paper-grain texture) and `assets/pygments.css`.
 ```
 build.py              # the generator
 index.html            # generated landing page (sections + cards)
-posts/                # generated post pages (one .html per notebook)
+posts/                # generated post pages (one .html per post)
 assets/
   style.css           # watercolor theme (shared)
   pygments.css        # code syntax-highlighting theme
-_src/<slug>/<slug>.ipynb   # source notebooks pulled from Kaggle
+_src/<slug>/<slug>.ipynb   # source notebooks pulled from Kaggle (notebook posts)
+_static/<slug>.md          # hand-written markdown articles (markdown posts)
 ```
 
 ### Rebuild
@@ -79,12 +89,20 @@ Dependencies: `mistune`, `pygments` (MathJax and fonts load from CDNs at view ti
 
 ### Add a new post
 
-1. Pull the notebook into `_src/<slug>/<slug>.ipynb`
+**From a Kaggle notebook:**
+1. Pull it into `_src/<slug>/<slug>.ipynb`
    (`kaggle kernels pull yassinealouini/<slug> -p _src/<slug>`).
-2. Add an entry to the `POSTS` list in `build.py` with a `slug`, `title`, `subtitle`,
-   `tags`, and a `category` (`"Computer Vision"`, `"Video Processing"`, `"NLP & LLMs"`, …).
-   New sections appear automatically; empty ones are skipped.
-3. `python3 build.py`, then commit and push.
+2. Add an entry to the `POSTS` list in `build.py` with `slug`, `title`, `subtitle`,
+   `tags`, and `category`.
+
+**As a hand-written article:**
+1. Write `_static/<slug>.md`.
+2. Add an entry to the `MD_POSTS` list in `build.py` (same fields, plus `src` pointing
+   at the markdown file and an optional `source` link).
+
+`category` is one of `"Computer Vision"`, `"Video Processing"`, `"NLP & LLMs"`, `"Research"`, …
+(or a **list** of them to cross-list). New sections appear automatically; empty ones are skipped.
+Then run `python3 build.py` and commit & push.
 
 ---
 
