@@ -93,31 +93,30 @@ For all the others, time to learn something new!</p>
 <p>Since the inputs and outputs are textual, there is a need for an embedding layer: a layer that takes as input words and returns number mappings (i.e. one word
 gets mapped to a unique number).</p>
 <p>Here is an implementation of an encoder/decoder architecture (from the <a href="http://nlp.seas.harvard.edu/2018/04/03/attention.html">annotated</a> paper):</p>
-<pre><code class="language-python">class EncoderDecoder(nn.Module):
-    &quot;&quot;&quot;
-    A standard Encoder-Decoder architecture. Base for this and many 
-    other models.
-    &quot;&quot;&quot;
-    def __init__(self, encoder, decoder, src_embed, tgt_embed, generator):
-        super(EncoderDecoder, self).__init__()
-        self.encoder = encoder
-        self.decoder = decoder
-        self.src_embed = src_embed
-        self.tgt_embed = tgt_embed
-        self.generator = generator
+<div class="code-cell"><pre class="highlight"><code><span class="k">class</span><span class="w"> </span><span class="nc">EncoderDecoder</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A standard Encoder-Decoder architecture. Base for this and many </span>
+<span class="sd">    other models.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">encoder</span><span class="p">,</span> <span class="n">decoder</span><span class="p">,</span> <span class="n">src_embed</span><span class="p">,</span> <span class="n">tgt_embed</span><span class="p">,</span> <span class="n">generator</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">EncoderDecoder</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">encoder</span> <span class="o">=</span> <span class="n">encoder</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">decoder</span> <span class="o">=</span> <span class="n">decoder</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">src_embed</span> <span class="o">=</span> <span class="n">src_embed</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tgt_embed</span> <span class="o">=</span> <span class="n">tgt_embed</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">generator</span> <span class="o">=</span> <span class="n">generator</span>
         
-    def forward(self, src, tgt, src_mask, tgt_mask):
-        &quot;Take in and process masked src and target sequences.&quot;
-        return self.decode(self.encode(src, src_mask), src_mask,
-                            tgt, tgt_mask)
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">src</span><span class="p">,</span> <span class="n">tgt</span><span class="p">,</span> <span class="n">src_mask</span><span class="p">,</span> <span class="n">tgt_mask</span><span class="p">):</span>
+        <span class="s2">&quot;Take in and process masked src and target sequences.&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">src_mask</span><span class="p">),</span> <span class="n">src_mask</span><span class="p">,</span>
+                            <span class="n">tgt</span><span class="p">,</span> <span class="n">tgt_mask</span><span class="p">)</span>
     
-    def encode(self, src, src_mask):
-        return self.encoder(self.src_embed(src), src_mask)
+    <span class="k">def</span><span class="w"> </span><span class="nf">encode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">src</span><span class="p">,</span> <span class="n">src_mask</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">encoder</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">src_embed</span><span class="p">(</span><span class="n">src</span><span class="p">),</span> <span class="n">src_mask</span><span class="p">)</span>
     
-    def decode(self, memory, src_mask, tgt, tgt_mask):
-        return self.decoder(self.tgt_embed(tgt), memory, src_mask, tgt_mask)
-</code></pre>
-<p>Each encoder and decoder blocks are made of two essential elements: a self-attention block and a feed-forward one (check the graph below). The decoder block has one additional self-attention block for the signal it receives from the encoder. There are many other details I am omitting, so check the resources for more details. Here is how the diagram looks like:</p>
+    <span class="k">def</span><span class="w"> </span><span class="nf">decode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">memory</span><span class="p">,</span> <span class="n">src_mask</span><span class="p">,</span> <span class="n">tgt</span><span class="p">,</span> <span class="n">tgt_mask</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">decoder</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tgt_embed</span><span class="p">(</span><span class="n">tgt</span><span class="p">),</span> <span class="n">memory</span><span class="p">,</span> <span class="n">src_mask</span><span class="p">,</span> <span class="n">tgt_mask</span><span class="p">)</span>
+</code></pre></div><p>Each encoder and decoder blocks are made of two essential elements: a self-attention block and a feed-forward one (check the graph below). The decoder block has one additional self-attention block for the signal it receives from the encoder. There are many other details I am omitting, so check the resources for more details. Here is how the diagram looks like:</p>
 <img src="https://miro.medium.com/max/1400/1*BHzGVskWGS_3jEcYYi6miQ.png" width=480>
 
 <p>One final detail, notice that the original transformer paper had <strong>6</strong> of these stacked. Many variations on the original transformer will make slight changes to one single block and also on how many blocks are stacked and how they are connected (and other details). I will stop here before loosing too much audience.</p>
@@ -250,82 +249,75 @@ additional layers to make the generic backbone work well for the task at hand.</
 <li>Trainer</li>
 </ol>
 <p>First thing, we define a simple model that inherits from the <code>LightningModule</code> class:</p>
-<pre><code class="language-python">
-import torch
-from torch.nn import functional as F
-from torch import nn
-from pytorch_lightning.core.lightning import LightningModule
-from torch.utils.data import DataLoader
-from torchvision.datasets import MNIST
-import os
-from torchvision import datasets, transforms
-from torchvision.datasets import MNIST
-from torch.optim import Adam
-from pytorch_lightning import Trainer, seed_everything
+<div class="code-cell"><pre class="highlight"><code><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch.nn</span><span class="w"> </span><span class="kn">import</span> <span class="n">functional</span> <span class="k">as</span> <span class="n">F</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch</span><span class="w"> </span><span class="kn">import</span> <span class="n">nn</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pytorch_lightning.core.lightning</span><span class="w"> </span><span class="kn">import</span> <span class="n">LightningModule</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch.utils.data</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataLoader</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchvision.datasets</span><span class="w"> </span><span class="kn">import</span> <span class="n">MNIST</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchvision</span><span class="w"> </span><span class="kn">import</span> <span class="n">datasets</span><span class="p">,</span> <span class="n">transforms</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchvision.datasets</span><span class="w"> </span><span class="kn">import</span> <span class="n">MNIST</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch.optim</span><span class="w"> </span><span class="kn">import</span> <span class="n">Adam</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pytorch_lightning</span><span class="w"> </span><span class="kn">import</span> <span class="n">Trainer</span><span class="p">,</span> <span class="n">seed_everything</span>
 
 
 
 
-class LitMNIST(LightningModule):
-    def __init__(self):
-        super().__init__()
-        self.layer_1 = torch.nn.Linear(28 * 28, 128)
-        self.layer_2 = torch.nn.Linear(128, 256)
-        self.layer_3 = torch.nn.Linear(256, 10)
+<span class="k">class</span><span class="w"> </span><span class="nc">LitMNIST</span><span class="p">(</span><span class="n">LightningModule</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layer_1</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="mi">28</span> <span class="o">*</span> <span class="mi">28</span><span class="p">,</span> <span class="mi">128</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layer_2</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="mi">128</span><span class="p">,</span> <span class="mi">256</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layer_3</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="mi">256</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
 
-    def forward(self, x):
-        batch_size, _, _, _ = x.size()
-        x = x.view(batch_size, -1)
-        x = self.layer_1(x)
-        x = torch.relu(x)
-        x = self.layer_2(x)
-        x = torch.relu(x)
-        x = self.layer_3(x)
-        x = torch.log_softmax(x, dim=1)
-        return x
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="n">batch_size</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_1</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_2</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_3</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">log_softmax</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">x</span>
 
-    def prepare_data(self):
-        # download only
-        MNIST(os.getcwd(), train=True, download=True)
+    <span class="k">def</span><span class="w"> </span><span class="nf">prepare_data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># download only</span>
+        <span class="n">MNIST</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">(),</span> <span class="n">train</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">download</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
-    def train_dataloader(self):
-        transform=transforms.Compose([transforms.ToTensor(),
-                                      transforms.Normalize((0.1307,), (0.3081,))])
-        mnist_train = MNIST(os.getcwd(), train=True, download=False, transform=transform)
-        return DataLoader(mnist_train, batch_size=64)
-
-
-    def configure_optimizers(self):
-        return Adam(self.parameters(), lr=1e-3)
-
-    def training_step(self, batch, batch_idx):
-        x, y = batch
-        logits = self(x)
-        loss = F.nll_loss(logits, y)
-
-        # add logging
-        logs = {'loss': loss}
-        return {'loss': loss, 'log': logs}
-
-</code></pre>
-<p>This model can be run similarly to any Pytorch model:</p>
-<pre><code class="language-python">net = LitMNIST()
-x = torch.Tensor(1, 1, 28, 28)
-out = net(x)
-print(out)
-# tensor([[-2.2469, -2.2845, -2.3024, -2.3162, -2.2317, -2.3438, -2.2973, -2.3393,
-#          -2.3107, -2.3608]], grad_fn=&lt;LogSoftmaxBackward&gt;)
+    <span class="k">def</span><span class="w"> </span><span class="nf">train_dataloader</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">transform</span><span class="o">=</span><span class="n">transforms</span><span class="o">.</span><span class="n">Compose</span><span class="p">([</span><span class="n">transforms</span><span class="o">.</span><span class="n">ToTensor</span><span class="p">(),</span>
+                                      <span class="n">transforms</span><span class="o">.</span><span class="n">Normalize</span><span class="p">((</span><span class="mf">0.1307</span><span class="p">,),</span> <span class="p">(</span><span class="mf">0.3081</span><span class="p">,))])</span>
+        <span class="n">mnist_train</span> <span class="o">=</span> <span class="n">MNIST</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">(),</span> <span class="n">train</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">download</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="n">transform</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">DataLoader</span><span class="p">(</span><span class="n">mnist_train</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">64</span><span class="p">)</span>
 
 
-</code></pre>
-<p>The different thing is that in addition to the model per say (<code>forward</code> and <code>__init__</code> methods mainly), we have here
+    <span class="k">def</span><span class="w"> </span><span class="nf">configure_optimizers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Adam</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span> <span class="n">lr</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">training_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">batch_idx</span><span class="p">):</span>
+        <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">batch</span>
+        <span class="n">logits</span> <span class="o">=</span> <span class="bp">self</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">loss</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">nll_loss</span><span class="p">(</span><span class="n">logits</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+
+        <span class="c1"># add logging</span>
+        <span class="n">logs</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;loss&#39;</span><span class="p">:</span> <span class="n">loss</span><span class="p">}</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;loss&#39;</span><span class="p">:</span> <span class="n">loss</span><span class="p">,</span> <span class="s1">&#39;log&#39;</span><span class="p">:</span> <span class="n">logs</span><span class="p">}</span>
+</code></pre></div><p>This model can be run similarly to any Pytorch model:</p>
+<div class="code-cell"><pre class="highlight"><code><span class="n">net</span> <span class="o">=</span> <span class="n">LitMNIST</span><span class="p">()</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">28</span><span class="p">,</span> <span class="mi">28</span><span class="p">)</span>
+<span class="n">out</span> <span class="o">=</span> <span class="n">net</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>
+<span class="c1"># tensor([[-2.2469, -2.2845, -2.3024, -2.3162, -2.2317, -2.3438, -2.2973, -2.3393,</span>
+<span class="c1">#          -2.3107, -2.3608]], grad_fn=&lt;LogSoftmaxBackward&gt;)</span>
+</code></pre></div><p>The different thing is that in addition to the model per say (<code>forward</code> and <code>__init__</code> methods mainly), we have here
 the <strong>data processing</strong>, <strong>optimizer</strong>, and the <strong>training loop</strong> within the LitMNIST class. These steps contain less boilerplate as well.</p>
 <p>Next concept, is the <code>[Trainer](https://pytorch-lightning.readthedocs.io/en/latest/trainer.html)</code>:</p>
-<pre><code class="language-python">model = LitMNIST()
-trainer = Trainer(gpus=1, max_epochs=5, deterministic=True)
-trainer.fit(model)
-</code></pre>
-<p>As you can see, here we have specified that the trainer should run using one GPU. We will see later that
+<div class="code-cell"><pre class="highlight"><code><span class="n">model</span> <span class="o">=</span> <span class="n">LitMNIST</span><span class="p">()</span>
+<span class="n">trainer</span> <span class="o">=</span> <span class="n">Trainer</span><span class="p">(</span><span class="n">gpus</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">max_epochs</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">deterministic</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">trainer</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+</code></pre></div><p>As you can see, here we have specified that the trainer should run using one GPU. We will see later that
 it is as easy (modulo some small changes) to use TPUs and that's what we will do. Before moving to the next section, notice that there are other alternatives to PytorchLightning (if you don't like the syntax for example): Pytorch of course and many more. Among these, you can use <a href="https://github.com/fastai/fastai2">fastai v2</a> library. Maybe I will explore this in a later notebook. ;)</p>
 </div>
 <div class="md"><p><a id="tokens"></a>
@@ -349,29 +341,23 @@ it is as easy (modulo some small changes) to use TPUs and that's what we will do
 </ul>
 <p>For more details, check this StackOverflow <a href="https://stackoverflow.com/questions/55382596/how-is-wordpiece-tokenization-helpful-to-effectively-deal-with-rare-words-proble">thread</a> and this medium blog <a href="https://towardsdatascience.com/comparing-transformer-tokenizers-686307856955">post</a> with comparaison of different tokenizers. Finally, if you want to learn more about BPE implementation, check this <a href="https://towardsdatascience.com/byte-pair-encoding-the-dark-horse-of-modern-nlp-eb36c7df4f10">blog</a>.</p>
 <p>Next, to get the tokenizer for RoBERTa, it is as simple as the following using the <code>tokenizers</code> library:</p>
-<pre><code class="language-python">
-from tokenizers import ByteLevelBPETokenizer
+<div class="code-cell"><pre class="highlight"><code><span class="kn">from</span><span class="w"> </span><span class="nn">tokenizers</span><span class="w"> </span><span class="kn">import</span> <span class="n">ByteLevelBPETokenizer</span>
 
 
-tokenizer = ByteLevelBPETokenizer(vocab_file=&quot;path/to/vocab.json&quot;, 
-                                  merges_file=&quot;path/to/merges.txt&quot;, 
-                                  add_prefix_space=True)
+<span class="n">tokenizer</span> <span class="o">=</span> <span class="n">ByteLevelBPETokenizer</span><span class="p">(</span><span class="n">vocab_file</span><span class="o">=</span><span class="s2">&quot;path/to/vocab.json&quot;</span><span class="p">,</span> 
+                                  <span class="n">merges_file</span><span class="o">=</span><span class="s2">&quot;path/to/merges.txt&quot;</span><span class="p">,</span> 
+                                  <span class="n">add_prefix_space</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
-tokenizer.encode(&quot;A sentence to encode&quot;)
+<span class="n">tokenizer</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">&quot;A sentence to encode&quot;</span><span class="p">)</span>
+</code></pre></div><p>or directly using the <code>transformers</code> library</p>
+<div class="code-cell"><pre class="highlight"><code><span class="kn">from</span><span class="w"> </span><span class="nn">transformers</span><span class="w"> </span><span class="kn">import</span> <span class="n">RobertaTokenizerFast</span>
 
-</code></pre>
-<p>or directly using the <code>transformers</code> library</p>
-<pre><code class="language-python">
-from transformers import RobertaTokenizerFast
+<span class="n">tokenizer</span> <span class="o">=</span> <span class="n">RobertaTokenizerFast</span><span class="p">(</span><span class="n">vocab_file</span><span class="o">=</span><span class="s2">&quot;path/to/vocab.json&quot;</span><span class="p">,</span> 
+                                 <span class="n">merges_file</span><span class="o">=</span><span class="s2">&quot;path/to/merges.txt&quot;</span><span class="p">,</span> 
+                                 <span class="n">add_prefix_space</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
-tokenizer = RobertaTokenizerFast(vocab_file=&quot;path/to/vocab.json&quot;, 
-                                 merges_file=&quot;path/to/merges.txt&quot;, 
-                                 add_prefix_space=True)
-
-tokenizer.encode(&quot;A sentence to encode&quot;)
-
-</code></pre>
-<p>Few more things to know about the RoBERTa's tokenizer:</p>
+<span class="n">tokenizer</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">&quot;A sentence to encode&quot;</span><span class="p">)</span>
+</code></pre></div><p>Few more things to know about the RoBERTa's tokenizer:</p>
 <ul>
 <li>The first 4 token ids are the following (special tokens): <code>{&quot;&lt;s&gt;&quot;: 0, &quot;&lt;pad&gt;&quot;: 1, &quot;&lt;/s&gt;&quot;: 2, &quot;&lt;unk&gt;&quot;: 3}</code></li>
 <li>RoBERTa's default vocabulary size is <strong>50262</strong> (compare this to BERT's uncased 30522)</li>
@@ -391,16 +377,12 @@ is a generic fact for all transformers's tokenizers).</li>
 Here we are given some tweets (this is from a popular dataset), associated sentiments (positive, negative, or neutral), and
 the <strong>text that helps extract the sentiment</strong>.</p>
 <p>For example:</p>
-<pre><code>
-text = Sooo SAD I will miss you here in San Diego!!!
+<div class="code-cell"><pre class="highlight"><code><span class="n">text</span> <span class="o">=</span> <span class="n">Sooo</span> <span class="n">SAD</span> <span class="n">I</span> <span class="n">will</span> <span class="n">miss</span> <span class="n">you</span> <span class="n">here</span> <span class="ow">in</span> <span class="n">San</span> <span class="n">Diego</span><span class="err">!!!</span>
 
-sentiment = negative 
+<span class="n">sentiment</span> <span class="o">=</span> <span class="n">negative</span> 
 
-selected_text = Sooo SAD
-
-
-</code></pre>
-<p>The task is thus to extract a sub-part of a given sentence that captures the sentiment.</p>
+<span class="n">selected_text</span> <span class="o">=</span> <span class="n">Sooo</span> <span class="n">SAD</span>
+</code></pre></div><p>The task is thus to extract a sub-part of a given sentence that captures the sentiment.</p>
 </div>
 <div class="code-cell"><pre class="highlight"><code><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 
@@ -423,14 +405,12 @@ selected_text = Sooo SAD
 </blockquote>
 <p>Here is a link to the Wikipedia <a href="https://en.wikipedia.org/wiki/Jaccard_index">page</a>.</p>
 <p>Kaggle has also provided a Python implementation:</p>
-<pre><code class="language-python">def jaccard(str1, str2): 
-    a = set(str1.lower().split()) 
-    b = set(str2.lower().split())
-    c = a.intersection(b)
-    return float(len(c)) / (len(a) + len(b) - len(c))
-
-</code></pre>
-<p>As far as I know, this metric is also popular in computer vision object detection tasks. Let's have a look at one simple example:</p>
+<div class="code-cell"><pre class="highlight"><code><span class="k">def</span><span class="w"> </span><span class="nf">jaccard</span><span class="p">(</span><span class="n">str1</span><span class="p">,</span> <span class="n">str2</span><span class="p">):</span> 
+    <span class="n">a</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">str1</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">())</span> 
+    <span class="n">b</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">str2</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
+    <span class="n">c</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">c</span><span class="p">))</span> <span class="o">/</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">b</span><span class="p">)</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">c</span><span class="p">))</span>
+</code></pre></div><p>As far as I know, this metric is also popular in computer vision object detection tasks. Let's have a look at one simple example:</p>
 </div>
 <div class="code-cell"><pre class="highlight"><code><span class="k">def</span><span class="w"> </span><span class="nf">jaccard</span><span class="p">(</span><span class="n">str1</span><span class="p">,</span> <span class="n">str2</span><span class="p">):</span> 
     <span class="n">a</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">str1</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">())</span> 
@@ -607,23 +587,18 @@ So we can get inspiration from a Q&amp;A task.</p>
 <p>Once these steps done, we will be able to add the <code>train_dataloader</code>, <code>val_dataloader</code>, and <code>test_dataloader</code> methods.</p>
 </div>
 <div class="md"><p>Before we start, we can do some preliminary work:</p>
-<pre><code class="language-python">sentiment_id = {
-    'positive': 1313,
-    'negative': 2430,
-    'neutral': 7974
-}
-
-</code></pre>
-<p>You may ask, where does these values come from? And why do we need them in the first place?</p>
+<div class="code-cell"><pre class="highlight"><code><span class="n">sentiment_id</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;positive&#39;</span><span class="p">:</span> <span class="mi">1313</span><span class="p">,</span>
+    <span class="s1">&#39;negative&#39;</span><span class="p">:</span> <span class="mi">2430</span><span class="p">,</span>
+    <span class="s1">&#39;neutral&#39;</span><span class="p">:</span> <span class="mi">7974</span>
+<span class="p">}</span>
+</code></pre></div><p>You may ask, where does these values come from? And why do we need them in the first place?</p>
 <ol>
 <li>You get these ids by running the RoBERTa tokenizer on the three types of sentiments:</li>
 </ol>
-<pre><code class="language-python">
-for sentiment in [&quot;negative&quot;, &quot;positive&quot;, &quot;neutral&quot;]:
-    print(roberta_tokenizer.encode(sentiment).id)
-
-</code></pre>
-<ol start="2">
+<div class="code-cell"><pre class="highlight"><code><span class="k">for</span> <span class="n">sentiment</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;negative&quot;</span><span class="p">,</span> <span class="s2">&quot;positive&quot;</span><span class="p">,</span> <span class="s2">&quot;neutral&quot;</span><span class="p">]:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">roberta_tokenizer</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">sentiment</span><span class="p">)</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+</code></pre></div><ol start="2">
 <li>So instead of re-running the same computation over and over again for each row, we store these into a dict (a cheap cache).
 We need these values to correctly tokenize the <code>text</code> + <code>extracted_text</code>. More about this soon.</li>
 </ol>
@@ -1101,11 +1076,10 @@ in the Trainer to only run for one step and get the results faster.</p>
 <p>Well, you just need to change the trainer:</p>
 <p><code>tpu_trainer = Trainer(num_tpu_cores=8, progress_bar_refresh_rate=5, max_epochs=3)</code></p>
 <p>You also need to install the <code>pytorch-xla</code> library: this is how Pytorch can communicate with TPUs.</p>
-<pre><code class="language-bash">!curl https://raw.githubusercontent.com/pytorch/xla/master/contrib/scripts/env-setup.py -o pytorch-xla-env-setup.py
-!python pytorch-xla-env-setup.py --apt-packages libomp5 libopenblas-dev
-!export XLA_USE_BF16=1
-</code></pre>
-<p>Finally, to make it run here on the Kaggle notebook, you will need to change the Accelerator to <strong>TPU v3-8</strong> (on the right panel, in the Settings) and re-run the cells. If you need more details, let me know in the comments!</p>
+<div class="code-cell"><pre class="highlight"><code>!curl<span class="w"> </span>https://raw.githubusercontent.com/pytorch/xla/master/contrib/scripts/env-setup.py<span class="w"> </span>-o<span class="w"> </span>pytorch-xla-env-setup.py
+!python<span class="w"> </span>pytorch-xla-env-setup.py<span class="w"> </span>--apt-packages<span class="w"> </span>libomp5<span class="w"> </span>libopenblas-dev
+!export<span class="w"> </span><span class="nv">XLA_USE_BF16</span><span class="o">=</span><span class="m">1</span>
+</code></pre></div><p>Finally, to make it run here on the Kaggle notebook, you will need to change the Accelerator to <strong>TPU v3-8</strong> (on the right panel, in the Settings) and re-run the cells. If you need more details, let me know in the comments!</p>
 </div>
 <div class="md"><p>This is only the training part. For inference, you can check this <a href="https://www.kaggle.com/yassinealouini/model-inference-only">notebook</a>. You only need to save the model as a dataset and load it.
 One more thing to notice is that the inference part uses GPU and not TPU since it wasn't allowed. Some people have reported some discrepancy between training on TPU vs training on GPU then predicting on GPU. If you know why, please share your insights in the comments below.</p>

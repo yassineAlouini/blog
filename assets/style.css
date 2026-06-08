@@ -140,8 +140,10 @@ article,.post-foot,.back{max-width:780px;margin-left:auto;margin-right:auto}
 .md th,.md td{border-bottom:1px solid var(--line);padding:9px 13px;text-align:left}
 .md th{background:rgba(28,119,195,.12);font-weight:700;color:var(--sea-deep)}
 .md tr:last-child td{border-bottom:none}
-.md code{background:var(--code-bg);border:1px solid rgba(226,90,59,.25);border-radius:6px;
+/* inline code only — never the multi-line code inside <pre> */
+.md :not(pre)>code{background:var(--code-bg);border:1px solid rgba(226,90,59,.25);border-radius:6px;
   padding:1px 6px;font-family:var(--mono);font-size:.85em;color:var(--coral)}
+.md pre.highlight code{background:none;border:none;padding:0;color:inherit;font-size:13.5px}
 .md a{border-bottom:2px solid rgba(28,119,195,.35)}
 
 /* code cells */

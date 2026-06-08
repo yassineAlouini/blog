@@ -698,26 +698,25 @@ as a loss.</p>
 <ul>
 <li>Jaccard loss: this is linked to the Jaccard metric via the trick above (or some variant). Here is an implementation (from <a href="https://gist.github.com/wassname/17cbfe0b68148d129a3ddaa227696496">here</a>):</li>
 </ul>
-<pre><code class="language-python">def jaccard_distance_loss(y_true, y_pred, smooth=100):
-    &quot;&quot;&quot;
-    Jaccard = (|X &amp; Y|)/ (|X|+ |Y| - |X &amp; Y|)
-            = sum(|A*B|)/(sum(|A|)+sum(|B|)-sum(|A*B|))
-    
-    The jaccard distance loss is usefull for unbalanced datasets. This has been
-    shifted so it converges on 0 and is smoothed to avoid exploding or disapearing
-    gradient.
-    
-    Ref: https://en.wikipedia.org/wiki/Jaccard_index
-    
-    @url: https://gist.github.com/wassname/17cbfe0b68148d129a3ddaa227696496
-    @author: wassname
-    &quot;&quot;&quot;
-    intersection= (y_true * y_pred).abs().sum(dim=-1)
-    sum_ = torch.sum(y_true.abs() + y_pred.abs(), dim=-1)
-    jac = (intersection + smooth) / (sum_ - intersection + smooth)
-    return (1 - jac) * smooth
-</code></pre>
-<ul>
+<div class="code-cell"><pre class="highlight"><code><span class="k">def</span><span class="w"> </span><span class="nf">jaccard_distance_loss</span><span class="p">(</span><span class="n">y_true</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">,</span> <span class="n">smooth</span><span class="o">=</span><span class="mi">100</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Jaccard = (|X &amp; Y|)/ (|X|+ |Y| - |X &amp; Y|)</span>
+<span class="sd">            = sum(|A*B|)/(sum(|A|)+sum(|B|)-sum(|A*B|))</span>
+<span class="sd">    </span>
+<span class="sd">    The jaccard distance loss is usefull for unbalanced datasets. This has been</span>
+<span class="sd">    shifted so it converges on 0 and is smoothed to avoid exploding or disapearing</span>
+<span class="sd">    gradient.</span>
+<span class="sd">    </span>
+<span class="sd">    Ref: https://en.wikipedia.org/wiki/Jaccard_index</span>
+<span class="sd">    </span>
+<span class="sd">    @url: https://gist.github.com/wassname/17cbfe0b68148d129a3ddaa227696496</span>
+<span class="sd">    @author: wassname</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">intersection</span><span class="o">=</span> <span class="p">(</span><span class="n">y_true</span> <span class="o">*</span> <span class="n">y_pred</span><span class="p">)</span><span class="o">.</span><span class="n">abs</span><span class="p">()</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">sum_</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">y_true</span><span class="o">.</span><span class="n">abs</span><span class="p">()</span> <span class="o">+</span> <span class="n">y_pred</span><span class="o">.</span><span class="n">abs</span><span class="p">(),</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">jac</span> <span class="o">=</span> <span class="p">(</span><span class="n">intersection</span> <span class="o">+</span> <span class="n">smooth</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">sum_</span> <span class="o">-</span> <span class="n">intersection</span> <span class="o">+</span> <span class="n">smooth</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">jac</span><span class="p">)</span> <span class="o">*</span> <span class="n">smooth</span>
+</code></pre></div><ul>
 <li><p>Binary cross entropy in the case of binary semantic segmentation when the classes are balanced (or categorical
 cross entropy for multiclasses).</p>
 </li>

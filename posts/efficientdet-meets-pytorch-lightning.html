@@ -424,11 +424,10 @@ The images have a varying number of wheat heads, colors, orientations, and so on
 <ul>
 <li>There is a toal of <strong>3422</strong> unique train images. The code to get this number:</li>
 </ul>
-<pre><code class="language-python">from pathlib import Path
-train_paths = Path(&quot;/path/to/train&quot;)
-len(list(train_paths.glob(&quot;*&quot;)))
-</code></pre>
-<ul>
+<div class="code-cell"><pre class="highlight"><code><span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="n">train_paths</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s2">&quot;/path/to/train&quot;</span><span class="p">)</span>
+<span class="nb">len</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">train_paths</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s2">&quot;*&quot;</span><span class="p">)))</span>
+</code></pre></div><ul>
 <li>There is a total of <strong>3373</strong> unique images with masks</li>
 <li>Thus some images don't have any masks</li>
 <li>There is a toal of <strong>147793</strong> masks</li>
@@ -438,15 +437,14 @@ len(list(train_paths.glob(&quot;*&quot;)))
 <li>There are 3 channels: R, G, B.</li>
 <li>The train images come from <strong>7</strong> different sources. Here is the distribution:</li>
 </ul>
-<pre><code class="language-python">    {'arvalis_1': 1055,
-    'arvalis_2': 204,
-    'arvalis_3': 559,
-    'ethz_1': 747,
-    'inrae_1': 176,
-    'rres_1': 432,
-    'usask_1': 200}
-</code></pre>
-<ul>
+<div class="code-cell"><pre class="highlight"><code>    <span class="p">{</span><span class="s1">&#39;arvalis_1&#39;</span><span class="p">:</span> <span class="mi">1055</span><span class="p">,</span>
+    <span class="s1">&#39;arvalis_2&#39;</span><span class="p">:</span> <span class="mi">204</span><span class="p">,</span>
+    <span class="s1">&#39;arvalis_3&#39;</span><span class="p">:</span> <span class="mi">559</span><span class="p">,</span>
+    <span class="s1">&#39;ethz_1&#39;</span><span class="p">:</span> <span class="mi">747</span><span class="p">,</span>
+    <span class="s1">&#39;inrae_1&#39;</span><span class="p">:</span> <span class="mi">176</span><span class="p">,</span>
+    <span class="s1">&#39;rres_1&#39;</span><span class="p">:</span> <span class="mi">432</span><span class="p">,</span>
+    <span class="s1">&#39;usask_1&#39;</span><span class="p">:</span> <span class="mi">200</span><span class="p">}</span>
+</code></pre></div><ul>
 <li><strong>3</strong> of these sources are probably similar: <em>arvalis_1</em>, <em>arvalis_2</em>, and <em>arvalis_3</em>. Most likely, the breakdown is by the competition sponsors/organisers?</li>
 <li>Bounding boxes where added using this <a href="https://github.com/jsbroks/coco-annotator">tool</a>.</li>
 <li>You can find resized datasets <a href="https://www.kaggle.com/c/global-wheat-detection/discussion/160408">here</a>.</li>
@@ -470,11 +468,10 @@ len(list(train_paths.glob(&quot;*&quot;)))
 <ul>
 <li>Only <strong>10</strong> images have been made public. The code to get this:</li>
 </ul>
-<pre><code class="language-python">    from pathlib import Path
-    test_paths = Path(&quot;/path/to/test&quot;)
-    len(list(test_paths.glob(&quot;*&quot;)))
-</code></pre>
-<ul>
+<div class="code-cell"><pre class="highlight"><code>    <span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+    <span class="n">test_paths</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s2">&quot;/path/to/test&quot;</span><span class="p">)</span>
+    <span class="nb">len</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">test_paths</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s2">&quot;*&quot;</span><span class="p">)))</span>
+</code></pre></div><ul>
 <li>Don't worry though, there is a &quot;real&quot; test dataset that runs when you submit your inference kernel.</li>
 <li>The test dataset has been collected from different sources than the train. This is an important aspect of the competition for sure.</li>
 <li>There are few images in the test dataset that aren't 1024 x 1024. These will be fixed in the private part as far as I know.</li>
@@ -484,54 +481,52 @@ len(list(train_paths.glob(&quot;*&quot;)))
 <li><p>Short code snippets:</p>
 <ul>
 <li><p>Load an image and overlay the corresponding mask(s):</p>
-<pre><code class="language-python">    from pathlib import Path
+<div class="code-cell"><pre class="highlight"><code>    <span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
 
-    img_id = &quot;ID_OF_IMAGE&quot;
-    img_path = Path(f&quot;/path/to/train/{img_id}.jpg&quot;)
-    img = Image.open(img_path)
-    draw = ImageDraw.Draw(img)
-    bboxes = train_labels_df.loc[lambda df: df[&quot;image_id&quot;] == img_id, &quot;bbox&quot;].tolist()
-    # The box contains the upper left corner (x, y) coordinates then width and height.
-    # So we need to change these to (x1, y1) and (x2, y2) where they are the upper 
-    # left and lower right corners
-    for bbox in bboxes:
-        x, y, w, h = eval(bbox)
-        transformed_bbox = [x, y, x + w, y + h]
-        draw.rectangle(transformed_bbox, outline=&quot;black&quot;, width=3)
-    img.save(&quot;/path/to/output/{img_id}.png&quot;)
-    img
-</code></pre>
-<img src="https://www.googleapis.com/download/storage/v1/b/kaggle-user-content/o/inbox%2F172860%2Fe56c560fc347f24e44a9840c3afbf61c%2Fimag_with_bbox.png?generation=1593939578542921&amp;alt=media" width=480>
+    <span class="n">img_id</span> <span class="o">=</span> <span class="s2">&quot;ID_OF_IMAGE&quot;</span>
+    <span class="n">img_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;/path/to/train/</span><span class="si">{</span><span class="n">img_id</span><span class="si">}</span><span class="s2">.jpg&quot;</span><span class="p">)</span>
+    <span class="n">img</span> <span class="o">=</span> <span class="n">Image</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">img_path</span><span class="p">)</span>
+    <span class="n">draw</span> <span class="o">=</span> <span class="n">ImageDraw</span><span class="o">.</span><span class="n">Draw</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
+    <span class="n">bboxes</span> <span class="o">=</span> <span class="n">train_labels_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="k">lambda</span> <span class="n">df</span><span class="p">:</span> <span class="n">df</span><span class="p">[</span><span class="s2">&quot;image_id&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">img_id</span><span class="p">,</span> <span class="s2">&quot;bbox&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+    <span class="c1"># The box contains the upper left corner (x, y) coordinates then width and height.</span>
+    <span class="c1"># So we need to change these to (x1, y1) and (x2, y2) where they are the upper </span>
+    <span class="c1"># left and lower right corners</span>
+    <span class="k">for</span> <span class="n">bbox</span> <span class="ow">in</span> <span class="n">bboxes</span><span class="p">:</span>
+        <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">h</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="n">bbox</span><span class="p">)</span>
+        <span class="n">transformed_bbox</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">x</span> <span class="o">+</span> <span class="n">w</span><span class="p">,</span> <span class="n">y</span> <span class="o">+</span> <span class="n">h</span><span class="p">]</span>
+        <span class="n">draw</span><span class="o">.</span><span class="n">rectangle</span><span class="p">(</span><span class="n">transformed_bbox</span><span class="p">,</span> <span class="n">outline</span><span class="o">=</span><span class="s2">&quot;black&quot;</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+    <span class="n">img</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="s2">&quot;/path/to/output/</span><span class="si">{img_id}</span><span class="s2">.png&quot;</span><span class="p">)</span>
+    <span class="n">img</span>
+</code></pre></div><img src="https://www.googleapis.com/download/storage/v1/b/kaggle-user-content/o/inbox%2F172860%2Fe56c560fc347f24e44a9840c3afbf61c%2Fimag_with_bbox.png?generation=1593939578542921&amp;alt=media" width=480>
 
 </li>
 <li><p>Extracting bounding boxes coordinates, width, height, and area:</p>
 </li>
 </ul>
-<pre><code class="language-python">    import pandas as pd
-    train_labels_df = pd.read_csv(&quot;path/to/train/labels.csv&quot;)
+<div class="code-cell"><pre class="highlight"><code>    <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+    <span class="n">train_labels_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s2">&quot;path/to/train/labels.csv&quot;</span><span class="p">)</span>
 
-    x = []
-    y = []
-    w = []
-    h = []
-    for bbox in train_labels_df['bbox']:
-        bbox = eval(bbox)
-        x.append(bbox[0])
-        y.append(bbox[1])
-        w.append(bbox[2])
-        h.append(bbox[3])
+    <span class="n">x</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">w</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">h</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">bbox</span> <span class="ow">in</span> <span class="n">train_labels_df</span><span class="p">[</span><span class="s1">&#39;bbox&#39;</span><span class="p">]:</span>
+        <span class="n">bbox</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="n">bbox</span><span class="p">)</span>
+        <span class="n">x</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">bbox</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">y</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">bbox</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">w</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">bbox</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+        <span class="n">h</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">bbox</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
 
-    processed_train_labels_df = train_labels_df.copy()
-    processed_train_labels_df[&quot;x&quot;] = x
-    processed_train_labels_df[&quot;y&quot;] = y
-    processed_train_labels_df[&quot;w&quot;] = w
-    processed_train_labels_df[&quot;h&quot;] = h
+    <span class="n">processed_train_labels_df</span> <span class="o">=</span> <span class="n">train_labels_df</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">processed_train_labels_df</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">x</span>
+    <span class="n">processed_train_labels_df</span><span class="p">[</span><span class="s2">&quot;y&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">y</span>
+    <span class="n">processed_train_labels_df</span><span class="p">[</span><span class="s2">&quot;w&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">w</span>
+    <span class="n">processed_train_labels_df</span><span class="p">[</span><span class="s2">&quot;h&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">h</span>
 
-    processed_train_labels_df[&quot;area&quot;] = processed_train_labels_df[&quot;w&quot;] * processed_train_labels_df[&quot;h&quot;]
-    processed_train_labels_df[&quot;x2&quot;] = processed_train_labels_df[&quot;x&quot;] + processed_train_labels_df[&quot;w&quot;]
-    processed_train_labels_df[&quot;y2&quot;] = processed_train_labels_df[&quot;y&quot;] + processed_train_labels_df[&quot;h&quot;]
-</code></pre>
-</li>
+    <span class="n">processed_train_labels_df</span><span class="p">[</span><span class="s2">&quot;area&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">processed_train_labels_df</span><span class="p">[</span><span class="s2">&quot;w&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="n">processed_train_labels_df</span><span class="p">[</span><span class="s2">&quot;h&quot;</span><span class="p">]</span>
+    <span class="n">processed_train_labels_df</span><span class="p">[</span><span class="s2">&quot;x2&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">processed_train_labels_df</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">processed_train_labels_df</span><span class="p">[</span><span class="s2">&quot;w&quot;</span><span class="p">]</span>
+    <span class="n">processed_train_labels_df</span><span class="p">[</span><span class="s2">&quot;y2&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">processed_train_labels_df</span><span class="p">[</span><span class="s2">&quot;y&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">processed_train_labels_df</span><span class="p">[</span><span class="s2">&quot;h&quot;</span><span class="p">]</span>
+</code></pre></div></li>
 <li><p>Metric</p>
 <ul>
 <li>There are many components to this metric: first, we compute Jaccard/<a href="https://www.pyimagesearch.com/2016/11/07/intersection-over-union-iou-for-object-detection/">IoU</a> scores, then for some threshold <code>t</code>, the wheat head is a TP if the IoU is above it, finally we compute the <a href="https://en.wikipedia.org/wiki/Precision_and_recall">precision</a> for this threshold. Then, average over the thresholds (given the AP) and over images (given mAP, mean average prediction).</li>
@@ -600,41 +595,37 @@ For that, we will start by defining the model part then move to the data process
 </div>
 <div class="md"><p>To make things easier (DRY principle), I will be using the following <strong>EfficientDet</strong> <a href="https://github.com/rwightman/efficientdet-pytorch">model</a>.</p>
 <p>To create the model, the code snippet is quite simple (D5 <strong>EfficientDet</strong> here but you can use the one that suits your needs):</p>
-<pre><code class="language-python">
-from effdet import get_efficientdet_config, EfficientDet, DetBenchTrain
-from effdet.efficientdet import HeadNet
+<div class="code-cell"><pre class="highlight"><code><span class="kn">from</span><span class="w"> </span><span class="nn">effdet</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_efficientdet_config</span><span class="p">,</span> <span class="n">EfficientDet</span><span class="p">,</span> <span class="n">DetBenchTrain</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">effdet.efficientdet</span><span class="w"> </span><span class="kn">import</span> <span class="n">HeadNet</span>
 
 
 
-def get_train_efficientdet():
-    # Get the model's config
-    config = get_efficientdet_config(&quot;tf_efficientdet_d5&quot;)
-    # Create the model
-    net = EfficientDet(config, pretrained_backbone=False)
-    # Load pretrained EfficientDet weights
-    checkpoint = torch.load(&quot;path/to/weights&quot;)
-    net.load_state_dict(checkpoint)
-    # Change the number of classes to 1 (only predicting wheat)
-    config.num_classes = 1
-    config.image_size = 256
-    # Add the head with the updated parameters
-    head = HeadNet(
-        config,
-        num_outputs=config.num_classes,
-        norm_kwargs=dict(eps=0.001, momentum=0.01),
-    )
-    # Attach the head
-    net.class_net = head
-    return DetBenchTrain(net, config)
-
-</code></pre>
-</div>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_train_efficientdet</span><span class="p">():</span>
+    <span class="c1"># Get the model&#39;s config</span>
+    <span class="n">config</span> <span class="o">=</span> <span class="n">get_efficientdet_config</span><span class="p">(</span><span class="s2">&quot;tf_efficientdet_d5&quot;</span><span class="p">)</span>
+    <span class="c1"># Create the model</span>
+    <span class="n">net</span> <span class="o">=</span> <span class="n">EfficientDet</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">pretrained_backbone</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="c1"># Load pretrained EfficientDet weights</span>
+    <span class="n">checkpoint</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">&quot;path/to/weights&quot;</span><span class="p">)</span>
+    <span class="n">net</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">checkpoint</span><span class="p">)</span>
+    <span class="c1"># Change the number of classes to 1 (only predicting wheat)</span>
+    <span class="n">config</span><span class="o">.</span><span class="n">num_classes</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">config</span><span class="o">.</span><span class="n">image_size</span> <span class="o">=</span> <span class="mi">256</span>
+    <span class="c1"># Add the head with the updated parameters</span>
+    <span class="n">head</span> <span class="o">=</span> <span class="n">HeadNet</span><span class="p">(</span>
+        <span class="n">config</span><span class="p">,</span>
+        <span class="n">num_outputs</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">num_classes</span><span class="p">,</span>
+        <span class="n">norm_kwargs</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">eps</span><span class="o">=</span><span class="mf">0.001</span><span class="p">,</span> <span class="n">momentum</span><span class="o">=</span><span class="mf">0.01</span><span class="p">),</span>
+    <span class="p">)</span>
+    <span class="c1"># Attach the head</span>
+    <span class="n">net</span><span class="o">.</span><span class="n">class_net</span> <span class="o">=</span> <span class="n">head</span>
+    <span class="k">return</span> <span class="n">DetBenchTrain</span><span class="p">(</span><span class="n">net</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span>
+</code></pre></div></div>
 <div class="md"><p>Notice that for the most recent version of the <code>effdet</code> library, you can use the create_model and/or the create_mode_from_config functions for a cleaner code.</p>
 <p>Here is a sample code:</p>
-<pre><code>from effdet import create_model
-net = create_model('tf_efficientdet_d5', bench_task='train', num_classes=1, bench_labeler=True)
-</code></pre>
-</div>
+<div class="code-cell"><pre class="highlight"><code><span class="kn">from</span><span class="w"> </span><span class="nn">effdet</span><span class="w"> </span><span class="kn">import</span> <span class="n">create_model</span>
+<span class="n">net</span> <span class="o">=</span> <span class="n">create_model</span><span class="p">(</span><span class="s1">&#39;tf_efficientdet_d5&#39;</span><span class="p">,</span> <span class="n">bench_task</span><span class="o">=</span><span class="s1">&#39;train&#39;</span><span class="p">,</span> <span class="n">num_classes</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">bench_labeler</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</code></pre></div></div>
 <div class="md"><p>In what follows, we will use this code snippet to create the model. Next, let's see how we can
 create a <code>WheatDataset</code>: if you aren't familiar with Pytorch's <code>Dataset</code> concept, check it <a href="https://pytorch.org/docs/stable/data.html#torch.utils.data.Dataset">here</a>.</p>
 </div>

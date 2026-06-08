@@ -4,8 +4,9 @@ import json, re, html, pathlib, datetime
 
 import mistune
 from pygments import highlight
-from pygments.lexers import PythonLexer, BashLexer
+from pygments.lexers import PythonLexer, BashLexer, get_lexer_by_name
 from pygments.formatters import HtmlFormatter
+from pygments.util import ClassNotFound
 
 ROOT = pathlib.Path(__file__).parent
 SRC  = ROOT / "_src"
@@ -63,7 +64,18 @@ EXTERNAL = [
          url="https://yassineAlouini.github.io/lecun-world-models/"),
 ]
 
-md = mistune.create_markdown(escape=False,
+class HighlightRenderer(mistune.HTMLRenderer):
+    """Render fenced/indented markdown code blocks with Pygments, matching code cells."""
+    def block_code(self, code, info=None):
+        lang = info.strip().split(None, 1)[0].lower() if info else ""
+        try:
+            lexer = get_lexer_by_name(lang) if lang else PythonLexer()
+        except ClassNotFound:
+            lexer = PythonLexer()
+        body = highlight(code, lexer, HtmlFormatter(nowrap=True))
+        return f'<div class="code-cell"><pre class="highlight"><code>{body}</code></pre></div>'
+
+md = mistune.create_markdown(renderer=HighlightRenderer(escape=False),
                              plugins=["math", "table", "strikethrough", "url"])
 
 def lexer_for(src: str):
