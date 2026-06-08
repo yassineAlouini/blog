@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FFmpeg 101</title>
+<link rel="stylesheet" href="../assets/style.css">
+<link rel="stylesheet" href="../assets/pygments.css">
+<script>window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']]},svg:{fontCache:'global'}};</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
+</head><body>
+
+<a class="back" href="../index.html">← All posts</a>
+<article>
+  <header class="post-head">
+    <div class="tags"><span class="tag">FFmpeg</span><span class="tag">Video</span><span class="tag">Tooling</span></div>
+    <h1>FFmpeg 101</h1>
+    <p class="subtitle">Practical FFmpeg recipes for video and audio preprocessing in ML pipelines.</p>
+    <p class="kaggle-link"><a href="https://www.kaggle.com/code/yassinealouini/ffmpeg-101" target="_blank" rel="noopener">▶ View original on Kaggle</a></p>
+  </header>
+  <div class="note">Ported from the Kaggle notebook source (narrative + code). Cell outputs are
+  not re-executed here — run it on Kaggle for live results.</div>
+  <div class="nb"><div class="md"><h1>Preamble</h1>
+</div>
+<div class="md"><p>I have tried to use <code>torchcodec</code> (a codec library that has good PyTorch API etc) at the end of this notebook but failed due to
+env issues. If I manage to succeed later, I will add a section.</p>
+<p>In the meantime, you can give it a try by installing it:</p>
+<p><code>!pip install torchcodec --index-url=https://download.pytorch.org/whl/cu126</code></p>
+<p>Or checking the <a href="https://github.com/pytorch/torchcodec">repo</a>.</p>
+</div>
+<div class="md"><h1>Introduction</h1>
+<p>I have been using ffmpeg over the last 5 years (or so) and much more recently (due to my new professional activities).</p>
+<p>In this guide, we will explore some of the <strong>core concepts</strong>  of this great piece of software work, with some detailed exemples.</p>
+<p>Let's get started!</p>
+</div>
+<div class="md"><h2>What is ffmpeg?</h2>
+</div>
+<div class="md"><p><img src="https://upload.wikimedia.org/wikipedia/commons/5/5f/FFmpeg_Logo_new.svg" alt="logo" /></p>
+</div>
+<div class="md"><p>Here is a high-level overview from Claude (with some personal modification, using Claude's Sonnet 3.5 model):</p>
+</div>
+<div class="md"><p><code>ffmpeg</code> is a powerful open-source software suite for handling multimedia data.</p>
+<p>It's a complete solution for <strong>recording</strong>, <strong>converting</strong>, and <strong>streaming</strong> audio and video content. The name comes from &quot;FF&quot; (Fast Forward) and <a href="https://en.wikipedia.org/wiki/Moving_Picture_Experts_Group">MPEG</a> (Moving Picture Experts Group).</p>
+<p>At its core, <strong>FFmpeg</strong> provides several key capabilities:</p>
+<ol>
+<li><p>Format Conversion (Transcoding): It can convert between virtually any media format, such as converting MP4 videos to WebM, or WAV audio files to MP3. This includes support for hundreds of different <strong>codecs</strong> and <strong>container</strong> formats.</p>
+</li>
+<li><p>Video/Audio Processing: beyond simple conversion, FFmpeg can:</p>
+<ul>
+<li>Resize videos</li>
+<li>Adjust video quality</li>
+<li>Change frame rates</li>
+<li>Modify audio sampling rates</li>
+<li>Apply filters and effects</li>
+<li>Extract audio from video files</li>
+<li>Combine multiple media files</li>
+</ul>
+</li>
+<li><p>Streaming: it supports streaming protocols like <strong>RTMP</strong>, <strong>HLS</strong>, and <strong>DASH</strong>, making it essential for live streaming applications and video platforms.</p>
+</li>
+<li><p>Screen Recording: can capture screen content, making it useful for creating tutorials or recording gameplay.</p>
+</li>
+</ol>
+<p>FFmpeg is used extensively behind the scenes in many popular applications and services. YouTube, VLC media player, and many video editing tools rely on FFmpeg for media processing. It can be used both through command-line interface (CLI) and as a library in software development.</p>
+<p>To install the CLI on Linux, the easiest way is the following command:</p>
+<p><code>apt install ffmpeg</code></p>
+<p>For developers, FFmpeg provides several libraries:</p>
+<ul>
+<li>libavcodec: For encoding and decoding audio/video</li>
+<li>libavformat: For muxing and demuxing media containers</li>
+<li>libavfilter: For adding effects and modifications</li>
+<li>libavutil: For common utilities</li>
+<li>libswscale: For image scaling and color space/pixel format conversion</li>
+</ul>
+<p>Due to its versatility and robust performance, FFmpeg has become the de facto standard for media handling in both professional and open-source software.</p>
+</div>
+<div class="md"><p>Great, now that we know a bit more about ffmpeg, let's some adjacent core concepts before moving to some
+common commands.</p>
+</div>
+<div class="md"><h2>What is really a video?</h2>
+</div>
+<div class="md"><p>You might be wondering what a video could be? A video is a collection of the following elements:</p>
+<ul>
+<li>A container Format (also called wrapper format):</li>
+</ul>
+<p>This is like an envelope that holds everything together. It defines how to store the video, audio, subtitles, and metadata in a single file. Common container formats include:</p>
+<p>MP4 (.mp4)
+AVI (.avi)
+MKV (.mkv)
+WebM (.webm)
+MOV (.mov)</p>
+<ul>
+<li>Video Codec:
+This is the algorithm that compresses and decompresses the actual video data. The codec determines how individual frames are encoded. Popular video codecs include:</li>
+</ul>
+<p>H.264/AVC (very common for streaming and general use)
+H.265/HEVC (newer, more efficient compression)
+VP9 (open-source, used by YouTube)
+AV1 (newest open-source codec)</p>
+<ul>
+<li>Audio Codec:
+Similar to video codecs, these handle the sound data. Common audio codecs include:</li>
+</ul>
+<p>AAC (Advanced Audio Coding)
+MP3
+AC3 (Dolby Digital)
+Opus (open-source)</p>
+<p>When these components come together, they form what we consider a video file. For example, a typical MP4 file might contain:</p>
+<p>Container: MP4
+Video: H.264 encoded video stream
+Audio: AAC encoded audio stream
+Additional metadata like title, creation date, etc.</p>
+<p>The playback software needs to understand both the container format and the specific codecs used to properly decode and play the video.</p>
+</div>
+<div class="md"><h2>About codecs</h2>
+</div>
+<div class="md"><p>A (video) <a href="https://en.wikipedia.org/wiki/Video_codec">codec</a> is short for compressor-decompressor. It is used to transform a raw video into a more mangeable format. Most often this transformation is lossy, i.e. some of the details of the original raw video are lost.</p>
+<p>Some of the popular codecs are:</p>
+<ol>
+<li><p>H.264/AVC (Advanced Video Coding) - Widely used for streaming, Blu-ray discs, and video sharing platforms due to its excellent balance of quality and compression</p>
+</li>
+<li><p>H.265/HEVC (High Efficiency Video Coding) - The successor to H.264, offering roughly 50% better compression at the same quality level</p>
+</li>
+<li><p>AV1 (AOMedia Video 1) - A newer royalty-free codec gaining adoption by major streaming platforms and tech companies, offering better compression than HEVC</p>
+</li>
+<li><p>VP9 - Google's codec used widely on YouTube and in browsers, serving as an alternative to HEVC</p>
+</li>
+<li><p>ProRes - Apple's professional codec focused on editing quality rather than file size, popular in video production workflows</p>
+</li>
+<li><p>MPEG-2 - Older but still used for broadcast television and DVD</p>
+</li>
+<li><p>VC-1 - Microsoft's video codec used in some Blu-ray discs and Windows Media</p>
+</li>
+<li><p>AVC1 - A specific implementation of H.264 often used in web browsers</p>
+</li>
+<li><p>VP8 - An older open codec from Google, predecessor to VP9</p>
+</li>
+<li><p>MJPEG (Motion JPEG) - Used in some cameras and for editing, prioritizing each frame quality over compression</p>
+</li>
+</ol>
+</div>
+<div class="md"><ul>
+<li>YCBCR color space.</li>
+<li>Luma and chroma signals</li>
+<li>Often the luma signal is more important for (human) visual perception</li>
+<li>Thus, the chroma signal is often <a href="https://en.wikipedia.org/wiki/Chroma_subsampling">subsampled</a> to achieve higher compression</li>
+<li>Common subsampling ratios are 4:2:1 and 4:1:1</li>
+<li>For professional codecs, the ratio could be 4:4:4 (one example is Sony's HDCAM-SR)</li>
+<li>A few codecs can sample on the RGB subspace and blue could be undersampled.</li>
+<li>There is also subsampling in the spatial and temporal dimensions.</li>
+<li>Often DCT is used (and some modern codecs use wavelet transformations)</li>
+</ul>
+</div>
+<div class="md"><p>Let's have a detour and explore a bit the concept of <a href="https://en.wikipedia.org/wiki/Video_compression_picture_types">video compression picture types</a>. For that, we have used again Claude Sonnet and adapted the summary below:</p>
+</div>
+<div class="md"><p>Video compression relies on different frame types (also called picture types) to efficiently reduce file size while maintaining quality. Here's a detailed look at the key frame types used in modern video codecs:</p>
+<h2>I-Frames (Intra-coded frames)</h2>
+<ul>
+<li>Complete, standalone images similar to JPEG photos</li>
+<li>Don't depend on data from other frames</li>
+<li>Contain all the data needed to display the entire picture</li>
+<li>Serve as reference points for other frame types</li>
+<li>Require the most storage space but provide high quality</li>
+<li>Typically appear at scene changes or at regular intervals (e.g., every 12-24 frames)</li>
+<li>Essential for seeking/scrubbing through video</li>
+</ul>
+<h2>P-Frames (Predicted frames)</h2>
+<ul>
+<li>Store only the differences (delta) from previous I-frames or P-frames</li>
+<li>Use motion compensation to predict where elements moved from the reference frame</li>
+<li>Much smaller than I-frames (typically 30-50% of the size)</li>
+<li>Form a dependency chain (require preceding reference frames to be decoded)</li>
+<li>Quality gradually decreases as you move further from an I-frame</li>
+</ul>
+<h2>B-Frames (Bi-directional predicted frames)</h2>
+<ul>
+<li>Reference both previous AND future frames to predict content</li>
+<li>Most storage-efficient frame type (often 10-20% of an I-frame's size)</li>
+<li>Create the highest compression ratio but require more processing power</li>
+<li>Introduce some encoding/decoding latency due to looking ahead</li>
+<li>Not used in low-latency applications like video conferencing</li>
+<li>Can't be used as reference frames in some implementations</li>
+</ul>
+<p>The specific arrangement of these frame types is called the Group of Pictures (GOP) structure, which significantly impacts compression efficiency, quality, random access capability, and error resilience of the compressed video.</p>
+</div>
+<div class="md"><p>Let's dig a bit deeper into the concept of <a href="https://en.wikipedia.org/wiki/Group_of_pictures">GOP</a> (group of picture)</p>
+</div>
+<div class="md"><p>IPBBPBBPBB: this is one possible GOP</p>
+</div>
+<div class="md"><h2>About containers</h2>
+</div>
+<div class="md"><p>A <a href="https://en.wikipedia.org/wiki/Container_format">container</a> is a file format that contains different data streams (i.e. think about it as a box that contains things):</p>
+<ul>
+<li>video stream</li>
+<li>audio stream</li>
+<li>metadata</li>
+<li>subtitles</li>
+</ul>
+<p>Its puropse is to keep the different streams synchronized and compatible.
+Notice that the different streams could be each encoded using a different codec: h264 for the video and aac for the audio for example.</p>
+<p>One popular example is the <code>.mp4</code> video container.</p>
+</div>
+<div class="md"><p>Thus, a <strong>container</strong> and a <strong>codec</strong> make a video format.</p>
+<p>Let's explore the <code>.mp4</code> video format as an example.</p>
+</div>
+<div class="md"><h2>MP4</h2>
+</div>
+<div class="md"><p>MP4, short for <strong>MPEG4 part 14</strong>, is a very popular video format.</p>
+<p>As we have seen above, it is a combination of a codec (compressor-decoder) and a container:</p>
+<ol>
+<li>codec: for mp4, it is often h264 for video and aac for audio</li>
+<li>container: it is .mp4 file format</li>
+</ol>
+</div>
+<div class="md"><h2>Extracting metadata</h2>
+</div>
+<div class="md"><p>One common task that ffmpeg is used for is to extract metadata from the video to analyze.
+For that, there is a handy CLI tool: <strong>ffprobe</strong></p>
+</div>
+<div class="md"><p>Here is one command to do it:</p>
+<p><code>ffprobe path/to/video</code></p>
+</div>
+<div class="code-cell"><pre class="highlight"><code>!ffprobe<span class="w"> </span>-h
+</code></pre>
+</div>
+<div class="md"><p>Let's do it using this <a href="https://github.com/kkroening/ffmpeg-python">Python wrapper</a>.</p>
+</div>
+<div class="code-cell"><pre class="highlight"><code><span class="c1"># To install python&#39;s ffmpeg wrapper:</span>
+<span class="err">!</span><span class="n">pip</span> <span class="n">install</span> <span class="n">ffmpeg</span><span class="o">-</span><span class="n">python</span>
+</code></pre>
+</div>
+<div class="code-cell"><pre class="highlight"><code><span class="kn">import</span><span class="w"> </span><span class="nn">ffmpeg</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchvision.datasets.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">download_url</span>
+
+<span class="c1"># Download the sample video</span>
+<span class="n">download_url</span><span class="p">(</span>
+    <span class="s2">&quot;https://github.com/pytorch/vision/blob/main/test/assets/videos/WUzgd7C1pWA.mp4?raw=true&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;.&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;WUzgd7C1pWA.mp4&quot;</span>
+<span class="p">)</span>
+<span class="n">video_path</span> <span class="o">=</span> <span class="s2">&quot;./WUzgd7C1pWA.mp4&quot;</span>
+<span class="n">meta</span> <span class="o">=</span> <span class="n">ffmpeg</span><span class="o">.</span><span class="n">probe</span><span class="p">(</span><span class="n">video_path</span><span class="p">)</span>
+</code></pre>
+</div>
+<div class="code-cell"><pre class="highlight"><code><span class="n">meta</span>
+</code></pre>
+</div>
+<div class="md"><p>We can extract some useful information from the metadata:</p>
+</div>
+<div class="code-cell"><pre class="highlight"><code><span class="n">video_info</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">s</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">meta</span><span class="p">[</span><span class="s1">&#39;streams&#39;</span><span class="p">]</span> <span class="k">if</span> <span class="n">s</span><span class="p">[</span><span class="s1">&#39;codec_type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;video&#39;</span><span class="p">)</span>
+<span class="n">width</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">video_info</span><span class="p">[</span><span class="s1">&#39;width&#39;</span><span class="p">])</span>
+<span class="n">height</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">video_info</span><span class="p">[</span><span class="s1">&#39;height&#39;</span><span class="p">])</span>
+<span class="n">num_frames</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">video_info</span><span class="p">[</span><span class="s1">&#39;nb_frames&#39;</span><span class="p">])</span>
+<span class="n">fps</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="n">video_info</span><span class="p">[</span><span class="s1">&#39;r_frame_rate&#39;</span><span class="p">])</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;width: &quot;</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">height: &quot;</span><span class="p">,</span> <span class="n">height</span><span class="p">,</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">fps: &quot;</span><span class="p">,</span> <span class="n">fps</span><span class="p">)</span>
+</code></pre>
+</div>
+<div class="md"><h2>Extracting frames</h2>
+</div>
+<div class="md"><p>Let's extract frames using numpy and the ffmpeg wrapper</p>
+</div>
+<div class="code-cell"><pre class="highlight"><code><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="c1"># Create output directory for frames</span>
+<span class="n">output_dir</span> <span class="o">=</span> <span class="s2">&quot;extracted_frames&quot;</span>
+<span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">output_dir</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="c1"># Extract frames using ffmpeg</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">extract_frames</span><span class="p">(</span><span class="n">video_path</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">,</span> <span class="n">frame_rate</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Extract frames from a video file.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        video_path: Path to the video file</span>
+<span class="sd">        output_dir: Directory to save extracted frames</span>
+<span class="sd">        frame_rate: Optional frame rate for extraction (e.g., &#39;1&#39; for 1 frame per second)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">output_pattern</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_dir</span><span class="p">,</span> <span class="s2">&quot;frame_</span><span class="si">%04d</span><span class="s2">.jpg&quot;</span><span class="p">)</span>
+    
+    <span class="c1"># Build the ffmpeg command</span>
+    <span class="n">stream</span> <span class="o">=</span> <span class="n">ffmpeg</span><span class="o">.</span><span class="n">input</span><span class="p">(</span><span class="n">video_path</span><span class="p">)</span>
+    
+    <span class="k">if</span> <span class="n">frame_rate</span><span class="p">:</span>
+        <span class="c1"># Extract at specified frame rate</span>
+        <span class="n">stream</span> <span class="o">=</span> <span class="n">stream</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="s1">&#39;fps&#39;</span><span class="p">,</span> <span class="n">fps</span><span class="o">=</span><span class="n">frame_rate</span><span class="p">)</span>
+    
+    <span class="n">stream</span> <span class="o">=</span> <span class="n">stream</span><span class="o">.</span><span class="n">output</span><span class="p">(</span><span class="n">output_pattern</span><span class="p">)</span>
+    
+    <span class="c1"># Run the ffmpeg command</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Extracting frames...&quot;</span><span class="p">)</span>
+    <span class="n">ffmpeg</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">stream</span><span class="p">,</span> <span class="n">capture_stdout</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Frames extracted to </span><span class="si">{</span><span class="n">output_dir</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Extract all frames</span>
+<span class="n">extract_frames</span><span class="p">(</span><span class="n">video_path</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">)</span>
+</code></pre>
+</div>
+<div class="code-cell"><pre class="highlight"><code><span class="c1"># To read an extracted frame using numpy</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">PIL</span><span class="w"> </span><span class="kn">import</span> <span class="n">Image</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">IPython.display</span><span class="w"> </span><span class="kn">import</span> <span class="n">display</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">read_frame</span><span class="p">(</span><span class="n">frame_path</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Read an image frame and return it as a numpy array.&quot;&quot;&quot;</span>
+    <span class="n">out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">ffmpeg</span>
+        <span class="o">.</span><span class="n">input</span><span class="p">(</span><span class="n">frame_path</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">output</span><span class="p">(</span><span class="s1">&#39;pipe:&#39;</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;rawvideo&#39;</span><span class="p">,</span> <span class="n">pix_fmt</span><span class="o">=</span><span class="s1">&#39;rgb24&#39;</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">capture_stdout</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">frame</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">frombuffer</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">([</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">height</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">frame</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+<span class="c1"># Example: Read the first extracted frame</span>
+<span class="n">first_frame_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_dir</span><span class="p">,</span> <span class="s2">&quot;frame_0001.jpg&quot;</span><span class="p">)</span>
+<span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">first_frame_path</span><span class="p">):</span>
+    <span class="n">frame</span> <span class="o">=</span> <span class="n">read_frame</span><span class="p">(</span><span class="n">first_frame_path</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;First frame shape: </span><span class="si">{</span><span class="n">frame</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">img</span> <span class="o">=</span> <span class="n">Image</span><span class="o">.</span><span class="n">fromarray</span><span class="p">(</span><span class="n">frame</span><span class="p">)</span>
+    <span class="n">display</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
+</code></pre>
+</div>
+<div class="md"><h2>Extracting audio</h2>
+</div>
+<div class="md"><p>Let's give another example of extracting the audio stream using the ffmpeg wrapper as well.
+We will encode the audio as an mp3 since it is a very popular choice.</p>
+</div>
+<div class="code-cell"><pre class="highlight"><code><span class="kn">from</span><span class="w"> </span><span class="nn">IPython.display</span><span class="w"> </span><span class="kn">import</span> <span class="n">Audio</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">extract_and_play_audio_mp3</span><span class="p">(</span><span class="n">video_path</span><span class="p">,</span> <span class="n">output_audio_path</span><span class="o">=</span><span class="s2">&quot;extracted_audio.mp3&quot;</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Extract audio as MP3 and play it&quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="p">(</span>
+            <span class="n">ffmpeg</span>
+            <span class="o">.</span><span class="n">input</span><span class="p">(</span><span class="n">video_path</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">output</span><span class="p">(</span><span class="n">output_audio_path</span><span class="p">,</span> <span class="n">acodec</span><span class="o">=</span><span class="s1">&#39;mp3&#39;</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">overwrite_output</span><span class="p">()</span>
+            <span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">quiet</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="p">)</span>
+        
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Audio extracted to: </span><span class="si">{</span><span class="n">output_audio_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        
+        <span class="n">audio</span> <span class="o">=</span> <span class="n">Audio</span><span class="p">(</span><span class="n">output_audio_path</span><span class="p">)</span>
+        <span class="n">display</span><span class="p">(</span><span class="n">audio</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="n">output_audio_path</span>
+        
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span>
+</code></pre>
+</div>
+<div class="code-cell"><pre class="highlight"><code><span class="n">extract_and_play_audio_mp3</span><span class="p">(</span><span class="n">video_path</span><span class="p">)</span>
+</code></pre>
+</div>
+<div class="md"><h2>From a video to tensors on GPU</h2>
+</div>
+<div class="md"><p>We will try to get a video decoded directly on the GPU as tensors and then
+save it back as a video using GPU supported encoder.</p>
+<p>First, let's check if we have the necessary decoder and encoder with NVIDIA support
+in the current env.</p>
+</div>
+<div class="code-cell"><pre class="highlight"><code>!ffmpeg<span class="w"> </span>-decoders<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-i<span class="w"> </span>nvidia
+</code></pre>
+</div>
+<div class="code-cell"><pre class="highlight"><code>!ffmpeg<span class="w"> </span>-encoders<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-i<span class="w"> </span>nvidia
+</code></pre>
+</div>
+<div class="md"><p>We can try <code>h264_cuvid</code> for decoding and <code>nvenc_h264</code> for encoding later (notice that
+these choices are driven by the sample video we are using)</p>
+</div>
+<div class="md"><p>As stated in the preambule, we won't use <code>torchcodec</code> (have tried but failed with the current env) for now since it is a pain to install, instead we will use <code>PyNvVideoCodec</code>.</p>
+<p><a href="https://developer.nvidia.com/pynvvideocodec">https://developer.nvidia.com/pynvvideocodec</a></p>
+<p>This Python library isn't perfect and lacks some complete examples (though there are some in the <a href="https://docs.nvidia.com/video-technologies/pynvvideocodec/pynvc-api-prog-guide/index.html">official doc</a>) but it works and should be enough
+for what we want to achieve here.</p>
+<p>We will also heavily rely on the code from <a href="https://github.com/jxiaof/PyNvVideoCodec-example/blob/main/codec.py">here</a>.</p>
+</div>
+<div class="code-cell"><pre class="highlight"><code>!pip<span class="w"> </span>install<span class="w"> </span>PyNvVideoCodec
+</code></pre>
+</div>
+<div class="code-cell"><pre class="highlight"><code><span class="kn">import</span><span class="w"> </span><span class="nn">PyNvVideoCodec</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nvc</span> 
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">VideoDecoder</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">codec</span><span class="o">=</span><span class="n">nvc</span><span class="o">.</span><span class="n">cudaVideoCodec</span><span class="o">.</span><span class="n">H264</span><span class="p">,</span> <span class="n">gpuid</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">usedevicememory</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">codec</span> <span class="o">=</span> <span class="n">codec</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gpuid</span> <span class="o">=</span> <span class="n">gpuid</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">usedevicememory</span> <span class="o">=</span> <span class="n">usedevicememory</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">decoder</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">demuxer</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">frame_count</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">packet_iterator</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">frame_iterator</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">initialize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_file</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">frame_count</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">demuxer</span> <span class="o">=</span> <span class="n">nvc</span><span class="o">.</span><span class="n">CreateDemuxer</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="n">input_file</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">decoder</span> <span class="o">=</span> <span class="n">nvc</span><span class="o">.</span><span class="n">CreateDecoder</span><span class="p">(</span>
+            <span class="n">gpuid</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">gpuid</span><span class="p">,</span>
+            <span class="n">codec</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">codec</span><span class="p">,</span>
+            <span class="n">cudacontext</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+            <span class="n">cudastream</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+            <span class="n">usedevicememory</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">usedevicememory</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">packet_iterator</span> <span class="o">=</span> <span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">demuxer</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">frame_iterator</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__next__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">frame_iterator</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">packet</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">packet_iterator</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">frame_iterator</span> <span class="o">=</span> <span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">decoder</span><span class="o">.</span><span class="n">Decode</span><span class="p">(</span><span class="n">packet</span><span class="p">))</span>
+            <span class="k">except</span> <span class="ne">StopIteration</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">StopIteration</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Error decoding packet: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="n">e</span>
+        
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">decoded_frame</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">frame_iterator</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">frame_count</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">process_frame</span><span class="p">(</span><span class="n">decoded_frame</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">StopIteration</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">frame_iterator</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="fm">__next__</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Error decoding frame: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">e</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">nv12_to_rgb</span><span class="p">(</span><span class="n">nv12_tensor</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">nv12_tensor</span> <span class="o">=</span> <span class="n">nv12_tensor</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+            <span class="n">y_plane</span> <span class="o">=</span> <span class="n">nv12_tensor</span><span class="p">[:</span><span class="n">height</span><span class="p">,</span> <span class="p">:</span><span class="n">width</span><span class="p">]</span>
+            <span class="n">uv_plane</span> <span class="o">=</span> <span class="n">nv12_tensor</span><span class="p">[</span><span class="n">height</span><span class="p">:</span><span class="n">height</span> <span class="o">+</span> <span class="n">height</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span> <span class="p">:]</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">height</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span> <span class="n">width</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">repeat_interleave</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">repeat_interleave</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">u_plane</span> <span class="o">=</span> <span class="n">uv_plane</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="mi">128</span>
+            <span class="n">v_plane</span> <span class="o">=</span> <span class="n">uv_plane</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="mi">128</span>
+            <span class="n">r</span> <span class="o">=</span> <span class="n">y_plane</span> <span class="o">+</span> <span class="mf">1.402</span> <span class="o">*</span> <span class="n">v_plane</span>
+            <span class="n">g</span> <span class="o">=</span> <span class="n">y_plane</span> <span class="o">-</span> <span class="mf">0.344136</span> <span class="o">*</span> <span class="n">u_plane</span> <span class="o">-</span> <span class="mf">0.714136</span> <span class="o">*</span> <span class="n">v_plane</span>
+            <span class="n">b</span> <span class="o">=</span> <span class="n">y_plane</span> <span class="o">+</span> <span class="mf">1.772</span> <span class="o">*</span> <span class="n">u_plane</span>
+            <span class="n">rgb_frame</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">((</span><span class="n">r</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">b</span><span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">clamp</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">255</span><span class="p">)</span><span class="o">.</span><span class="n">byte</span><span class="p">()</span>
+            <span class="k">return</span> <span class="n">rgb_frame</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Error converting NV12 to RGB: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">e</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">process_frame</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">frame</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">src_tensor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">from_dlpack</span><span class="p">(</span><span class="n">frame</span><span class="p">)</span>
+            <span class="p">(</span><span class="n">height</span><span class="p">,</span> <span class="n">width</span><span class="p">)</span> <span class="o">=</span> <span class="n">frame</span><span class="o">.</span><span class="n">shape</span>
+            <span class="n">rgb_tensor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nv12_to_rgb</span><span class="p">(</span><span class="n">src_tensor</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">height</span> <span class="o">/</span> <span class="mf">1.5</span><span class="p">))</span>
+            <span class="k">return</span> <span class="n">rgb_tensor</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Error processing frame: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">e</span>
+</code></pre>
+</div>
+<div class="code-cell"><pre class="highlight"><code><span class="n">decoder</span> <span class="o">=</span> <span class="n">VideoDecoder</span><span class="p">()</span>
+<span class="n">decoder</span><span class="o">.</span><span class="n">initialize</span><span class="p">(</span><span class="n">video_path</span><span class="p">)</span>
+</code></pre>
+</div>
+<div class="code-cell"><pre class="highlight"><code><span class="n">mean_frames</span> <span class="o">=</span> <span class="p">[]</span>
+
+<span class="k">for</span> <span class="n">frame_id</span><span class="p">,</span> <span class="n">frame</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">decoder</span><span class="p">):</span>
+    <span class="c1"># From 0-255 to 0-1</span>
+    <span class="n">frame</span> <span class="o">=</span> <span class="n">frame</span> <span class="o">/</span> <span class="mf">255.0</span>
+    <span class="k">if</span> <span class="n">frame_id</span> <span class="o">%</span> <span class="mi">100</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">frame</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">frame</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">frame</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+    <span class="n">mean_frames</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">frame</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span>
+</code></pre>
+</div>
+<div class="md"><p>As you can see, we have managed to decode a video directly as a sequence of tensors on GPU. Very nice!</p>
+</div>
+<div class="code-cell"><pre class="highlight"><code><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">mean_frames</span><span class="p">)</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">())</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+</code></pre>
+</div>
+<div class="md"><p>Let's wrap up by encoding transformed frames into a new video. For that, we will use the following
+code snippet:</p>
+</div>
+<div class="code-cell"><pre class="highlight"><code><span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">VideoEncoder</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">,</span> <span class="nb">format</span><span class="p">,</span> <span class="n">use_cpu_input_buffer</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">width</span> <span class="o">=</span> <span class="n">width</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">height</span> <span class="o">=</span> <span class="n">height</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">format</span> <span class="o">=</span> <span class="nb">format</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">use_cpu_input_buffer</span> <span class="o">=</span> <span class="n">use_cpu_input_buffer</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">encoder</span> <span class="o">=</span> <span class="n">nvc</span><span class="o">.</span><span class="n">CreateEncoder</span><span class="p">(</span><span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">,</span> <span class="nb">format</span><span class="p">,</span> <span class="n">use_cpu_input_buffer</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Encoder created with width: </span><span class="si">{</span><span class="n">width</span><span class="si">}</span><span class="s1">, height: </span><span class="si">{</span><span class="n">height</span><span class="si">}</span><span class="s1">, format: </span><span class="si">{</span><span class="nb">format</span><span class="si">}</span><span class="s1">, use_cpu_input_buffer: </span><span class="si">{</span><span class="n">use_cpu_input_buffer</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">rgb_to_yuv</span><span class="p">(</span><span class="n">rgb_tensor</span><span class="p">):</span>
+        <span class="n">rgb_tensor</span> <span class="o">=</span> <span class="n">rgb_tensor</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">rgb_tensor</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="n">g</span> <span class="o">=</span> <span class="n">rgb_tensor</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="n">b</span> <span class="o">=</span> <span class="n">rgb_tensor</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">2</span><span class="p">]</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="mf">0.299</span> <span class="o">*</span> <span class="n">r</span> <span class="o">+</span> <span class="mf">0.587</span> <span class="o">*</span> <span class="n">g</span> <span class="o">+</span> <span class="mf">0.114</span> <span class="o">*</span> <span class="n">b</span>
+        <span class="n">u</span> <span class="o">=</span> <span class="o">-</span><span class="mf">0.14713</span> <span class="o">*</span> <span class="n">r</span> <span class="o">-</span> <span class="mf">0.28886</span> <span class="o">*</span> <span class="n">g</span> <span class="o">+</span> <span class="mf">0.436</span> <span class="o">*</span> <span class="n">b</span> <span class="o">+</span> <span class="mi">128</span>
+        <span class="n">v</span> <span class="o">=</span> <span class="mf">0.615</span> <span class="o">*</span> <span class="n">r</span> <span class="o">-</span> <span class="mf">0.51499</span> <span class="o">*</span> <span class="n">g</span> <span class="o">-</span> <span class="mf">0.10001</span> <span class="o">*</span> <span class="n">b</span> <span class="o">+</span> <span class="mi">128</span>
+        <span class="n">height</span><span class="p">,</span> <span class="n">width</span> <span class="o">=</span> <span class="n">rgb_tensor</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span>
+        <span class="n">y_plane</span> <span class="o">=</span> <span class="n">y</span>
+        <span class="n">u_plane</span> <span class="o">=</span> <span class="n">u</span><span class="p">[</span><span class="mi">0</span><span class="p">::</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">::</span><span class="mi">2</span><span class="p">]</span>
+        <span class="n">v_plane</span> <span class="o">=</span> <span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">::</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">::</span><span class="mi">2</span><span class="p">]</span>
+        <span class="n">uv_plane</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">((</span><span class="n">u_plane</span><span class="p">,</span> <span class="n">v_plane</span><span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">height</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span> <span class="n">width</span><span class="p">)</span>
+        <span class="n">tensor_yuv</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">y_plane</span><span class="p">,</span> <span class="n">uv_plane</span><span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">clamp</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">255</span><span class="p">)</span><span class="o">.</span><span class="n">byte</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">tensor_yuv</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">encode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_data</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">bitstream</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">encoder</span><span class="o">.</span><span class="n">Encode</span><span class="p">(</span><span class="n">input_data</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">bitstream</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Error encoding frame: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">end_encode</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">bitstream</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">encoder</span><span class="o">.</span><span class="n">EndEncode</span><span class="p">()</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Encoder flushed successfully&#39;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">bitstream</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Error ending encode: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">reconfigure</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">encoder</span><span class="o">.</span><span class="n">Reconfigure</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Encoder reconfigured successfully&#39;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Error reconfiguring encoder: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_reconfigure_params</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">encoder</span><span class="o">.</span><span class="n">GetEncodeReconfigureParams</span><span class="p">()</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Reconfigure parameters fetched successfully&#39;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">params</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Error fetching reconfigure parameters: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">None</span>
+</code></pre>
+</div>
+<div class="code-cell"><pre class="highlight"><code><span class="n">decoder</span> <span class="o">=</span> <span class="n">VideoDecoder</span><span class="p">()</span>
+<span class="n">decoder</span><span class="o">.</span><span class="n">initialize</span><span class="p">(</span><span class="n">video_path</span><span class="p">)</span>
+<span class="n">encoder</span> <span class="o">=</span> <span class="n">VideoEncoder</span><span class="p">(</span><span class="n">width</span><span class="o">=</span><span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="n">height</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s2">&quot;NV12&quot;</span><span class="p">,</span> 
+                       <span class="n">use_cpu_input_buffer</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">codec</span><span class="o">=</span><span class="s2">&quot;h264&quot;</span><span class="p">,</span> 
+                       <span class="n">fps</span><span class="o">=</span><span class="n">fps</span><span class="p">)</span>
+</code></pre>
+</div>
+<div class="code-cell"><pre class="highlight"><code><span class="kn">from</span><span class="w"> </span><span class="nn">tqdm</span><span class="w"> </span><span class="kn">import</span> <span class="n">tqdm</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">process</span><span class="p">(</span><span class="n">video_decoder</span><span class="p">,</span> <span class="n">video_encoder</span><span class="p">,</span> <span class="n">output_file</span><span class="p">):</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">output_file</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">frame_number</span><span class="p">,</span> <span class="n">rgb_tensor</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="nb">enumerate</span><span class="p">(</span><span class="n">video_decoder</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span> <span class="n">desc</span><span class="o">=</span><span class="s2">&quot;Processing&quot;</span><span class="p">):</span>
+            <span class="c1"># You can do various transformation.</span>
+            <span class="c1"># Here we simply invert the RGB to BGR space.</span>
+            <span class="n">rgb_tensor</span> <span class="o">=</span> <span class="n">rgb_tensor</span><span class="p">[:,</span> <span class="p">:,</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]]</span>
+            <span class="n">input_tensor</span> <span class="o">=</span> <span class="n">video_encoder</span><span class="o">.</span><span class="n">rgb_to_yuv</span><span class="p">(</span><span class="n">rgb_tensor</span><span class="p">)</span>
+            <span class="n">bitstream</span> <span class="o">=</span> <span class="n">video_encoder</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">input_tensor</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">bitstream</span><span class="p">:</span>
+                <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">bytearray</span><span class="p">(</span><span class="n">bitstream</span><span class="p">))</span>
+        <span class="n">remaining_bitstream</span> <span class="o">=</span> <span class="n">video_encoder</span><span class="o">.</span><span class="n">end_encode</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">remaining_bitstream</span><span class="p">:</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">bytearray</span><span class="p">(</span><span class="n">remaining_bitstream</span><span class="p">))</span>
+</code></pre>
+</div>
+<div class="code-cell"><pre class="highlight"><code><span class="n">process</span><span class="p">(</span><span class="n">decoder</span><span class="p">,</span> <span class="n">encoder</span><span class="p">,</span> <span class="s2">&quot;raw_output.mp4&quot;</span><span class="p">)</span>
+</code></pre>
+</div>
+<div class="md"><p>As you can see, the processing is extremly fast.</p>
+</div>
+<div class="md"><p>Notice that for some reasons that are outside my knowledge for now, we need to
+remux the output of the process function (i.e. move from one container to another).</p>
+<p>That's what we do in the next cell.</p>
+</div>
+<div class="code-cell"><pre class="highlight"><code><span class="n">input_video</span> <span class="o">=</span> <span class="n">ffmpeg</span><span class="o">.</span><span class="n">input</span><span class="p">(</span><span class="s1">&#39;raw_output.mp4&#39;</span><span class="p">)</span>
+<span class="n">output</span> <span class="o">=</span> <span class="n">ffmpeg</span><span class="o">.</span><span class="n">output</span><span class="p">(</span><span class="n">input_video</span><span class="p">,</span> <span class="s1">&#39;output.mp4&#39;</span><span class="p">,</span> <span class="n">vcodec</span><span class="o">=</span><span class="s1">&#39;copy&#39;</span><span class="p">,</span> <span class="n">acodec</span><span class="o">=</span><span class="s1">&#39;copy&#39;</span><span class="p">)</span>
+<span class="n">ffmpeg</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">overwrite_output</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</code></pre>
+</div>
+<div class="code-cell"><pre class="highlight"><code><span class="kn">from</span><span class="w"> </span><span class="nn">IPython.display</span><span class="w"> </span><span class="kn">import</span> <span class="n">Video</span>
+</code></pre>
+</div>
+<div class="code-cell"><pre class="highlight"><code><span class="c1"># Doesn&#39;t display before remuxing.</span>
+<span class="n">Video</span><span class="p">(</span><span class="s2">&quot;raw_output.mp4&quot;</span><span class="p">)</span>
+</code></pre>
+</div>
+<div class="code-cell"><pre class="highlight"><code><span class="n">Video</span><span class="p">(</span><span class="n">video_path</span><span class="p">)</span>
+</code></pre>
+</div>
+<div class="code-cell"><pre class="highlight"><code><span class="n">Video</span><span class="p">(</span><span class="s2">&quot;output.mp4&quot;</span><span class="p">)</span>
+</code></pre>
+</div>
+<div class="md"><p>Now the <code>output.mp4</code> can be displayed (even though there is some &quot;jittering&quot;, need more exploration to
+understand the root cause, maybe it is already in the original video, need to try on other videos).</p>
+</div>
+<div class="md"><h1>Conclusion</h1>
+</div>
+<div class="md"><p>That's it for this introduciton to ffmpeg, I hope you have learned something out of it.</p>
+</div></div>
+</article>
+<footer class="post-foot">Ported from <a href="https://www.kaggle.com/code/yassinealouini/ffmpeg-101">kaggle.com/code/yassinealouini/ffmpeg-101</a> ·
+built 2026-06-08</footer>
+
+</body></html>
