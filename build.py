@@ -54,14 +54,18 @@ SECTION_BLURB = {
 # (un-linked) text until a public link is available.
 BOOK_URL = "https://alouinimohamedyass.gumroad.com/l/computer_vision_with_pytorch"
 
-# static, pre-built post pages that live in posts/ but aren't generated from a notebook
-STATIC = [
-    dict(title="LeCun's World Models: JEPA, LeJEPA & LeWorldModel",
-         category="Research",
+# posts authored as markdown (rendered through the same pipeline as notebooks).
+# `category` may be a string or a list — the card then appears in each section.
+MD_POSTS = [
+    dict(slug="lecun-world-models",
+         category=["Computer Vision", "Research"],
+         title="LeCun's World Models: JEPA, LeJEPA & LeWorldModel",
          subtitle="A technical walkthrough of the JEPA world-model line — the maths, "
                   "a PyTorch reconstruction, and the AMI Labs startup.",
          tags=["World Models", "JEPA", "Research"],
-         href="posts/lecun-world-models.html"),
+         src="_static/lecun-world-models.md",
+         source=("https://arxiv.org/abs/2603.19312", "▶ LeWorldModel on arXiv"),
+         foot='Research digest compiled from arXiv and press sources · '),
 ]
 
 class HighlightRenderer(mistune.HTMLRenderer):
@@ -140,30 +144,43 @@ def page_shell(title, head_extra, body, rel="../"):
 MATHJAX = """<script>window.MathJax={tex:{inlineMath:[['\\\\(','\\\\)']],displayMath:[['\\\\[','\\\\]']]},svg:{fontCache:'global'}};</script>
 <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>"""
 
-def build_post(p):
-    nb = SRC / p["slug"] / f"{p['slug']}.ipynb"
-    body_inner = notebook_body(nb)
-    tags = "".join(f'<span class="tag">{html.escape(t)}</span>' for t in p["tags"])
-    kaggle = f"https://www.kaggle.com/code/{KAGGLE_USER}/{p['slug']}"
+def write_post(slug, title, subtitle, tags, body_inner, source_html="", note_html="", foot_html=""):
+    tags_html = "".join(f'<span class="tag">{html.escape(t)}</span>' for t in tags)
     body = f"""
 <a class="back" href="../index.html">← All posts</a>
 <article>
   <header class="post-head">
-    <div class="tags">{tags}</div>
-    <h1>{html.escape(p['title'])}</h1>
-    <p class="subtitle">{html.escape(p['subtitle'])}</p>
-    <p class="kaggle-link"><a href="{kaggle}" target="_blank" rel="noopener">▶ View original on Kaggle</a></p>
+    <div class="tags">{tags_html}</div>
+    <h1>{html.escape(title)}</h1>
+    <p class="subtitle">{html.escape(subtitle)}</p>
+    {source_html}
   </header>
-  <div class="note">Ported from the Kaggle notebook source (narrative + code). Cell outputs are
-  not re-executed here — run it on Kaggle for live results.</div>
+  {note_html}
   <div class="nb">{body_inner}</div>
 </article>
-<footer class="post-foot">Ported from <a href="{kaggle}">kaggle.com/code/{KAGGLE_USER}/{p['slug']}</a> ·
-built {datetime.date.today().isoformat()}</footer>
+<footer class="post-foot">{foot_html}built {datetime.date.today().isoformat()}</footer>
 """
-    out = page_shell(p["title"], MATHJAX, body, rel="../")
-    (POSTS_DIR / f"{p['slug']}.html").write_text(out)
-    print("post  ->", POSTS_DIR / f"{p['slug']}.html", f"({len(out)//1024}KB)")
+    out = page_shell(title, MATHJAX, body, rel="../")
+    (POSTS_DIR / f"{slug}.html").write_text(out)
+    print("post  ->", POSTS_DIR / f"{slug}.html", f"({len(out)//1024}KB)")
+
+def build_post(p):
+    body_inner = notebook_body(SRC / p["slug"] / f"{p['slug']}.ipynb")
+    kaggle = f"https://www.kaggle.com/code/{KAGGLE_USER}/{p['slug']}"
+    write_post(p["slug"], p["title"], p["subtitle"], p["tags"], body_inner,
+               source_html=f'<p class="kaggle-link"><a href="{kaggle}" target="_blank" rel="noopener">▶ View original on Kaggle</a></p>',
+               note_html='<div class="note">Ported from the Kaggle notebook source (narrative + code). '
+                         'Cell outputs are not re-executed here — run it on Kaggle for live results.</div>',
+               foot_html=f'Ported from <a href="{kaggle}">kaggle.com/code/{KAGGLE_USER}/{p["slug"]}</a> · ')
+
+def build_md_post(p):
+    body_inner = f'<div class="md">{md((ROOT / p["src"]).read_text())}</div>'
+    src_html = ""
+    if p.get("source"):
+        url, label = p["source"]
+        src_html = f'<p class="kaggle-link"><a href="{url}" target="_blank" rel="noopener">{label}</a></p>'
+    write_post(p["slug"], p["title"], p["subtitle"], p["tags"], body_inner,
+               source_html=src_html, foot_html=p.get("foot", ""))
 
 def card(title, subtitle, tags, href, external=False):
     chips = "".join(f'<span class="tag">{html.escape(t)}</span>' for t in tags)
@@ -175,19 +192,20 @@ def card(title, subtitle, tags, href, external=False):
 </a>"""
 
 def build_index():
-    # gather every item with its category
+    # gather every item with its category/categories
     items = [dict(title=p["title"], subtitle=p["subtitle"], tags=p["tags"],
-                  href=f"posts/{p['slug']}.html", external=False, category=p["category"])
-             for p in POSTS]
-    items += [dict(title=e["title"], subtitle=e["subtitle"], tags=e["tags"],
-                   href=e["href"], external=False, category=e["category"]) for e in STATIC]
+                  href=f"posts/{p['slug']}.html", category=p["category"])
+             for p in POSTS + MD_POSTS]
+    def cats(it):
+        c = it["category"]
+        return c if isinstance(c, list) else [c]
     # group into ordered sections (skip empty ones)
     sections = ""
     for sec in SECTION_ORDER:
-        sec_items = [it for it in items if it["category"] == sec]
+        sec_items = [it for it in items if sec in cats(it)]
         if not sec_items:
             continue
-        cards = "".join(card(it["title"], it["subtitle"], it["tags"], it["href"], it["external"])
+        cards = "".join(card(it["title"], it["subtitle"], it["tags"], it["href"])
                         for it in sec_items)
         blurb = SECTION_BLURB.get(sec, "")
         sections += (f'<section class="section">\n'
@@ -227,5 +245,7 @@ if __name__ == "__main__":
     write_assets()
     for p in POSTS:
         build_post(p)
+    for p in MD_POSTS:
+        build_md_post(p)
     build_index()
     print("done.")
