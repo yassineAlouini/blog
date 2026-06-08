@@ -151,6 +151,9 @@ def build_index():
     cards = [card(p["title"], p["subtitle"], p["tags"], f"posts/{p['slug']}.html") for p in POSTS]
     cards += [card(e["title"], e["subtitle"], e["tags"], e["url"], external=True) for e in EXTERNAL]
     book = "here" if BOOK_URL == "#" else f'<a href="{BOOK_URL}">here</a>'
+    book_cta = "" if BOOK_URL == "#" else (
+        f'<a class="book-cta" href="{BOOK_URL}" target="_blank" rel="noopener">'
+        f'📘 Get the book <span class="arr">→</span></a>')
     body = f"""
 <header class="hero">
   <div class="hero-inner">
@@ -161,6 +164,7 @@ def build_index():
     <p class="lede bio">Focusing now on some <strong>multi-modal applications</strong>
     (video, text and images, …) and on <strong>LLMs for specific tasks</strong>
     (coding, mathematical reasoning, …).</p>
+    {book_cta}
   </div>
 </header>
 <main class="grid-wrap">

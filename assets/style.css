@@ -70,6 +70,14 @@ strong{font-weight:700}
 .lede{font-size:21px;color:var(--ink);max-width:640px;margin:0;font-weight:500}
 .lede.bio{margin-top:14px;font-size:18px;color:var(--muted);font-weight:400}
 .lede a{border-bottom:2px solid var(--ochre);font-weight:700}
+.book-cta{display:inline-block;margin-top:28px;font-family:var(--display);font-weight:800;
+  font-size:19px;color:#fff;background:var(--wash);padding:14px 28px;
+  border-radius:4px 18px 4px 18px;box-shadow:0 9px 24px rgba(226,90,59,.32);
+  transition:transform .18s,box-shadow .18s}
+.book-cta:hover{transform:translateY(-3px) rotate(-.7deg);text-decoration:none;
+  box-shadow:0 16px 36px rgba(226,90,59,.42)}
+.book-cta .arr{display:inline-block;transition:transform .18s}
+.book-cta:hover .arr{transform:translateX(5px)}
 .grid-wrap{max-width:980px;margin:0 auto;padding:30px 24px 90px}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:26px}
 .card{display:block;background:rgba(255,255,255,.72);backdrop-filter:blur(4px);
