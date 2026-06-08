@@ -47,9 +47,15 @@ strong{font-weight:700}
 /* ---- shared accents ---- */
 .eyebrow{font-family:var(--hand);font-size:23px;font-weight:700;color:var(--coral);
   letter-spacing:.01em;margin-bottom:6px;transform:rotate(-1.2deg);display:inline-block}
-.tag{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;
-  color:#fff;background:var(--sea);padding:4px 11px;border-radius:999px;margin:0 6px 6px 0;
-  box-shadow:0 2px 0 rgba(33,48,63,.12)}
+.tag{display:inline-block;font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;
+  color:#fff;background:var(--sea);padding:2px 9px;border-radius:999px;margin:0 5px 5px 0;line-height:1.6}
+/* each tag gets its own Mediterranean colour, cycling */
+.tag:nth-of-type(6n+1){background:var(--sea)}
+.tag:nth-of-type(6n+2){background:var(--coral)}
+.tag:nth-of-type(6n+3){background:var(--turq)}
+.tag:nth-of-type(6n+4){background:var(--ochre);color:#5b3d12}
+.tag:nth-of-type(6n+5){background:var(--pink)}
+.tag:nth-of-type(6n+6){background:var(--olive)}
 .note{background:linear-gradient(0deg,rgba(242,165,60,.12),rgba(242,165,60,.12)),var(--paper);
   border:1.5px solid rgba(226,90,59,.35);border-left:5px solid var(--coral);border-radius:12px;
   padding:14px 18px;margin:24px 0;font-size:15px;color:#7a4a36}
@@ -74,12 +80,12 @@ strong{font-weight:700}
 .card p{margin:0;color:var(--muted);font-size:15px}
 .card .ext{font-family:var(--hand);font-size:16px;color:var(--olive);background:none;
   padding:0 0 0 4px;font-weight:700;vertical-align:middle}
-/* rotate Mediterranean accents across cards */
-.card:nth-child(5n+1){border-top-color:var(--sea)}    .card:nth-child(5n+1) .tag{background:var(--sea)}
-.card:nth-child(5n+2){border-top-color:var(--coral)}  .card:nth-child(5n+2) .tag{background:var(--coral)}
-.card:nth-child(5n+3){border-top-color:var(--turq)}   .card:nth-child(5n+3) .tag{background:var(--turq)}
-.card:nth-child(5n+4){border-top-color:var(--ochre)}  .card:nth-child(5n+4) .tag{background:var(--ochre);color:#5b3d12}
-.card:nth-child(5n+5){border-top-color:var(--pink)}   .card:nth-child(5n+5) .tag{background:var(--pink)}
+/* rotate Mediterranean accent on each card's top edge */
+.card:nth-child(5n+1){border-top-color:var(--sea)}
+.card:nth-child(5n+2){border-top-color:var(--coral)}
+.card:nth-child(5n+3){border-top-color:var(--turq)}
+.card:nth-child(5n+4){border-top-color:var(--ochre)}
+.card:nth-child(5n+5){border-top-color:var(--pink)}
 .card:hover{border-color:currentColor}
 
 /* ====================== POST PAGE ====================== */
