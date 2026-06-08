@@ -16,25 +16,39 @@ POSTS_DIR.mkdir(exist_ok=True); ASSETS.mkdir(exist_ok=True)
 # ---------------------------------------------------------------- post registry
 POSTS = [
     dict(slug="all-the-segmentation-metrics",
+         category="Computer Vision",
          title="All the Segmentation Metrics",
          subtitle="A visual catalogue of the metrics that show up in segmentation "
                   "challenges — IoU, Dice, Hausdorff and many more — explained and illustrated.",
          tags=["Computer Vision", "Segmentation", "Metrics"]),
     dict(slug="efficientdet-meets-pytorch-lightning",
+         category="Computer Vision",
          title="EfficientDet meets PyTorch Lightning",
          subtitle="Object detection with EfficientDet, wrapped cleanly in a "
                   "PyTorch Lightning training loop.",
          tags=["Object Detection", "PyTorch Lightning", "EfficientDet"]),
     dict(slug="ffmpeg-101",
+         category="Video Processing",
          title="FFmpeg 101",
          subtitle="Practical FFmpeg recipes for video and audio preprocessing in ML pipelines.",
          tags=["FFmpeg", "Video", "Tooling"]),
     dict(slug="roberta-meets-tpus",
+         category="NLP & LLMs",
          title="RoBERTa meets TPUs",
          subtitle="Training RoBERTa efficiently on TPUs with PyTorch/XLA and Lightning.",
          tags=["NLP", "TPU", "Transformers"]),
 ]
 KAGGLE_USER = "yassinealouini"
+
+# Section order + one-line blurbs for the landing page. Sections with no posts
+# are skipped automatically.
+SECTION_ORDER = ["Computer Vision", "Video Processing", "NLP & LLMs", "Research"]
+SECTION_BLURB = {
+    "Computer Vision": "Segmentation, detection, and the metrics that score them.",
+    "Video Processing": "Working with video — codecs, frames, and the preprocessing plumbing.",
+    "NLP & LLMs": "Language models and how to train them efficiently.",
+    "Research": "Deeper dives and paper write-ups.",
+}
 # Public URL of the computer-vision book. Set to "#" to render "here" as plain
 # (un-linked) text until a public link is available.
 BOOK_URL = "https://alouinimohamedyass.gumroad.com/l/computer_vision_with_pytorch"
@@ -42,6 +56,7 @@ BOOK_URL = "https://alouinimohamedyass.gumroad.com/l/computer_vision_with_pytorc
 # external posts that live in their own repos (linked, not rebuilt)
 EXTERNAL = [
     dict(title="LeCun's World Models: JEPA, LeJEPA & LeWorldModel",
+         category="Research",
          subtitle="A technical walkthrough of the JEPA world-model line — the maths, "
                   "a PyTorch reconstruction, and the AMI Labs startup.",
          tags=["World Models", "JEPA", "Research"],
@@ -148,8 +163,25 @@ def card(title, subtitle, tags, href, external=False):
 </a>"""
 
 def build_index():
-    cards = [card(p["title"], p["subtitle"], p["tags"], f"posts/{p['slug']}.html") for p in POSTS]
-    cards += [card(e["title"], e["subtitle"], e["tags"], e["url"], external=True) for e in EXTERNAL]
+    # gather every item with its category
+    items = [dict(title=p["title"], subtitle=p["subtitle"], tags=p["tags"],
+                  href=f"posts/{p['slug']}.html", external=False, category=p["category"])
+             for p in POSTS]
+    items += [dict(title=e["title"], subtitle=e["subtitle"], tags=e["tags"],
+                   href=e["url"], external=True, category=e["category"]) for e in EXTERNAL]
+    # group into ordered sections (skip empty ones)
+    sections = ""
+    for sec in SECTION_ORDER:
+        sec_items = [it for it in items if it["category"] == sec]
+        if not sec_items:
+            continue
+        cards = "".join(card(it["title"], it["subtitle"], it["tags"], it["href"], it["external"])
+                        for it in sec_items)
+        blurb = SECTION_BLURB.get(sec, "")
+        sections += (f'<section class="section">\n'
+                     f'  <h2 class="section-title">{html.escape(sec)}</h2>\n'
+                     + (f'  <p class="section-desc">{html.escape(blurb)}</p>\n' if blurb else "")
+                     + f'  <div class="grid">{cards}</div>\n</section>\n')
     book = "here" if BOOK_URL == "#" else f'<a href="{BOOK_URL}">here</a>'
     book_cta = "" if BOOK_URL == "#" else (
         f'<a class="book-cta" href="{BOOK_URL}" target="_blank" rel="noopener">'
@@ -167,10 +199,7 @@ def build_index():
   </div>
 </header>
 <main class="grid-wrap">
-  <div class="grid">
-    {''.join(cards)}
-  </div>
-</main>
+{sections}</main>
 <footer class="site-foot">Built with Claude Code · {datetime.date.today().isoformat()} ·
 sources on <a href="https://www.kaggle.com/{KAGGLE_USER}/code">Kaggle</a></footer>
 """
