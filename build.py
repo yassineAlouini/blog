@@ -158,7 +158,6 @@ def build_index():
 <header class="hero">
   <div class="hero-inner">
     <div class="eyebrow">Yassine Alouini · Notebooks &amp; Research</div>
-    <h1>The Notebook Blog</h1>
     <p class="lede">I am a <strong>computer vision expert</strong> — at least on the subset of
     deep-learning image applications. I have written a computer vision book; you can get it {book}.</p>
     <p class="lede bio">Focusing now on some <strong>multi-modal applications</strong>
@@ -175,7 +174,7 @@ def build_index():
 <footer class="site-foot">Built with Claude Code · {datetime.date.today().isoformat()} ·
 sources on <a href="https://www.kaggle.com/{KAGGLE_USER}/code">Kaggle</a></footer>
 """
-    out = page_shell("The Notebook Blog — Yassine Alouini", "", body, rel="")
+    out = page_shell("Yassine Alouini — Notebooks & Research", "", body, rel="")
     (ROOT / "index.html").write_text(out)
     print("index ->", ROOT / "index.html")
 
