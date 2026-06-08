@@ -54,14 +54,14 @@ SECTION_BLURB = {
 # (un-linked) text until a public link is available.
 BOOK_URL = "https://alouinimohamedyass.gumroad.com/l/computer_vision_with_pytorch"
 
-# external posts that live in their own repos (linked, not rebuilt)
-EXTERNAL = [
+# static, pre-built post pages that live in posts/ but aren't generated from a notebook
+STATIC = [
     dict(title="LeCun's World Models: JEPA, LeJEPA & LeWorldModel",
          category="Research",
          subtitle="A technical walkthrough of the JEPA world-model line — the maths, "
                   "a PyTorch reconstruction, and the AMI Labs startup.",
          tags=["World Models", "JEPA", "Research"],
-         url="https://yassineAlouini.github.io/lecun-world-models/"),
+         href="posts/lecun-world-models.html"),
 ]
 
 class HighlightRenderer(mistune.HTMLRenderer):
@@ -180,7 +180,7 @@ def build_index():
                   href=f"posts/{p['slug']}.html", external=False, category=p["category"])
              for p in POSTS]
     items += [dict(title=e["title"], subtitle=e["subtitle"], tags=e["tags"],
-                   href=e["url"], external=True, category=e["category"]) for e in EXTERNAL]
+                   href=e["href"], external=False, category=e["category"]) for e in STATIC]
     # group into ordered sections (skip empty ones)
     sections = ""
     for sec in SECTION_ORDER:

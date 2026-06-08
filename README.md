@@ -37,10 +37,9 @@ self-contained HTML page under `posts/` with the original narrative, math and co
 
 ### 🔬 Research
 *Deeper dives and paper write-ups.*
-- **[LeCun's World Models: JEPA, LeJEPA & LeWorldModel](https://yassineAlouini.github.io/lecun-world-models/)**
-  *(external)* — a technical walkthrough of the JEPA world-model line, the maths, a PyTorch
-  reconstruction, and the AMI Labs startup. Lives in its own
-  [repo](https://github.com/yassineAlouini/lecun-world-models).
+- **[LeCun's World Models: JEPA, LeJEPA & LeWorldModel](posts/lecun-world-models.html)** — a
+  technical walkthrough of the JEPA world-model line, the maths, a PyTorch reconstruction,
+  and the AMI Labs startup.
 
 ---
 
