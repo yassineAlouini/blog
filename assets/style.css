@@ -68,6 +68,8 @@ strong{font-weight:700}
   background:var(--wash);-webkit-background-clip:text;background-clip:text;color:transparent;
   filter:saturate(1.05)}
 .lede{font-size:21px;color:var(--ink);max-width:640px;margin:0;font-weight:500}
+.lede.bio{margin-top:14px;font-size:18px;color:var(--muted);font-weight:400}
+.lede a{border-bottom:2px solid var(--ochre);font-weight:700}
 .grid-wrap{max-width:980px;margin:0 auto;padding:30px 24px 90px}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:26px}
 .card{display:block;background:rgba(255,255,255,.72);backdrop-filter:blur(4px);

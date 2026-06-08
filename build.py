@@ -35,6 +35,9 @@ POSTS = [
          tags=["NLP", "TPU", "Transformers"]),
 ]
 KAGGLE_USER = "yassinealouini"
+# Public URL of the computer-vision book. Set to "#" to render "here" as plain
+# (un-linked) text until a public link is available.
+BOOK_URL = "https://alouinimohamedyass.gumroad.com/l/computer_vision_with_pytorch"
 
 # external posts that live in their own repos (linked, not rebuilt)
 EXTERNAL = [
@@ -147,13 +150,17 @@ def card(title, subtitle, tags, href, external=False):
 def build_index():
     cards = [card(p["title"], p["subtitle"], p["tags"], f"posts/{p['slug']}.html") for p in POSTS]
     cards += [card(e["title"], e["subtitle"], e["tags"], e["url"], external=True) for e in EXTERNAL]
+    book = "here" if BOOK_URL == "#" else f'<a href="{BOOK_URL}">here</a>'
     body = f"""
 <header class="hero">
   <div class="hero-inner">
     <div class="eyebrow">Yassine Alouini · Notebooks &amp; Research</div>
     <h1>The Notebook Blog</h1>
-    <p class="lede">High-scoring Kaggle notebooks and research write-ups, ported to standalone,
-    shareable HTML. Computer vision, NLP, tooling, and world models.</p>
+    <p class="lede">I am a <strong>computer vision expert</strong> — at least on the subset of
+    deep-learning image applications. I have written a computer vision book; you can get it {book}.</p>
+    <p class="lede bio">Focusing now on some <strong>multi-modal applications</strong>
+    (video, text and images, …) and on <strong>LLMs for specific tasks</strong>
+    (coding, mathematical reasoning, …).</p>
   </div>
 </header>
 <main class="grid-wrap">

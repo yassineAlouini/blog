@@ -4,7 +4,7 @@ High-scoring Kaggle notebooks and research write-ups by
 [Yassine Alouini](https://www.kaggle.com/yassinealouini/code), ported to standalone,
 shareable HTML in a clean reading layout.
 
-**Live site:** https://yassineAlouini.github.io/notebook-blog/
+**Live site:** https://yassineAlouini.github.io/blog/
 
 ## Posts
 - **All the Segmentation Metrics** — IoU, Dice, Hausdorff and more, illustrated.
