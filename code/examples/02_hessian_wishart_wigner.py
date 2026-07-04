@@ -59,10 +59,11 @@ def main():
         ax.set_xlabel("eigenvalue")
     axes[0].set_ylabel("density")
     fig.suptitle("Bridge I:  Hessian = Wishart (+) Wigner  -- saddles emerge as loss rises",
-                 fontweight="bold")
-    fig.text(0.5, -0.02,
+                 fontweight="bold", y=0.99)
+    fig.text(0.5, 0.005,
              "bars = eigenvalues of an actual H0+H1 sample;  clay curve = free convolution prediction",
              ha="center", fontsize=9, color=PALETTE["muted"])
+    fig.tight_layout(rect=[0, 0.04, 1, 0.90])
     plotting.save(fig, "02_hessian_wishart_wigner.png")
 
 

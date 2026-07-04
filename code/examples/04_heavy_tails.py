@@ -23,8 +23,16 @@ from rmtdl import plotting, spectra
 from rmtdl.plotting import PALETTE, plt
 
 
-def hill_exponent(values, tail_frac=0.1):
-    """Hill estimator of the power-law tail index for the largest `tail_frac`."""
+def hill_tail_index(values, tail_frac=0.1):
+    """Hill estimator of the power-law **tail index** of a set of values.
+
+    Mind the convention: this estimates the exponent of the eigenvalue
+    *distribution*'s tail, P(lambda > x) ~ x^(-index). It is NOT the same number
+    as the eigenvalue-vs-rank slope (that slope is the construction exponent
+    alpha below), nor the HTSR alpha of Martin & Mahoney (who fit the spectral
+    *density* rho(lambda) ~ lambda^(-alpha_HTSR), typically ~2-6). For a spectrum
+    built as lambda_(i) ~ i^(-alpha) this index comes out near 1/alpha.
+    """
     v = np.sort(values)[::-1]
     k = max(2, int(tail_frac * len(v)))
     top = v[:k]
@@ -48,12 +56,13 @@ def main():
     n, p = 1200, 800
     gamma = p / n
 
+    alpha_build = 1.6  # lambda_(i) ~ i^-alpha_build  -> rank-plot slope = -alpha_build
     rand = spectra.sample_wishart(n, p, rng=rng)
-    trained = heavy_tailed_matrix(n, p, alpha=1.6, rng=rng)
+    trained = heavy_tailed_matrix(n, p, alpha=alpha_build, rng=rng)
 
     e_rand = np.linalg.eigvalsh(rand)
     e_trained = np.linalg.eigvalsh(trained)
-    mu_hill = hill_exponent(e_trained, tail_frac=0.15)
+    tail_index = hill_tail_index(e_trained, tail_frac=0.15)  # ~ 1 / alpha_build
 
     plotting.use_watercolor_style()
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(13, 4.6))
@@ -72,18 +81,23 @@ def main():
     ax1.set_ylabel("density")
     ax1.legend(fontsize=9)
 
-    # (right) log-log tail with the Hill exponent
+    # (right) eigenvalue-vs-rank on log-log axes: the 'trained' spectrum is a
+    # straight line of slope -alpha_build. NOTE this rank slope (alpha_build) and
+    # the Hill *tail index* (~1/alpha_build) are two different exponents -- don't
+    # conflate them.
     for e, color, lbl in [(e_rand, PALETTE["sea"], "random init"),
                           (e_trained, PALETTE["clay"], "'trained'")]:
         v = np.sort(e[e > 0])[::-1]
         ax2.loglog(np.arange(1, len(v) + 1), v, color=color, lw=2.0, label=lbl)
-    ax2.set_title(f"power-law tail (Hill exponent mu = {mu_hill:.2f})")
+    ax2.set_title(f"eigenvalue vs rank  (rank slope alpha = {alpha_build:.1f}, "
+                  f"Hill tail index = {tail_index:.2f})")
     ax2.set_xlabel("rank")
     ax2.set_ylabel("eigenvalue")
     ax2.legend(fontsize=9)
 
     fig.suptitle("Heavy-Tailed Self-Regularization:  the weight spectrum is a generalization gauge",
-                 fontweight="bold")
+                 fontweight="bold", y=1.03)
+    fig.tight_layout()
     plotting.save(fig, "04_heavy_tails.png")
 
 

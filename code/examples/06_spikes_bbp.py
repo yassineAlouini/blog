@@ -72,7 +72,8 @@ def main():
     ax2.legend(fontsize=9)
 
     fig.suptitle("Spikes & BBP:  a sharp threshold separates learned signal from random noise",
-                 fontweight="bold")
+                 fontweight="bold", y=1.02)
+    fig.tight_layout()
     plotting.save(fig, "06_spikes_bbp.png")
 
 

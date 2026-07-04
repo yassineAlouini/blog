@@ -3,10 +3,13 @@
 Ridgeless random-feature regression: draw p random features, fit n training
 points by least norm. Sweep p/n across 1. The test error spikes exactly at the
 interpolation threshold p = n -- and the *reason* is RMT: the feature Gram
-matrix's smallest eigenvalue is governed by the Marchenko-Pastur edge
-lam_minus = (1 - sqrt(p/n))^2, which -> 0 as p/n -> 1. A vanishing eigenvalue
-means an exploding inverse, hence exploding variance. Past the threshold,
-over-parameterization *improves* conditioning and the error falls again.
+matrix's smallest eigenvalue collapses toward 0 as p/n -> 1, in the manner of the
+Marchenko-Pastur lower edge lam_minus = (1 - sqrt(p/n))^2. (For the tanh random
+features here that MP edge is the *qualitative* picture, not an exact formula --
+the features aren't iid Gaussian -- but the smallest eigenvalue still pinches off
+at p = n.) A vanishing eigenvalue means an exploding inverse, hence exploding
+variance. Past the threshold, over-parameterization *improves* conditioning and
+the error falls again.
 
 We plot test error and the empirical smallest eigenvalue of the (normalized)
 feature Gram on the same p/n axis: the error spike sits right on the MP edge.

@@ -87,6 +87,11 @@ def free_additive_convolution(
     G_mu, G_nu : callables z -> G(z)  (use the `cauchy_from_*` builders).
     x          : real grid to evaluate the resulting density on.
     eta        : imaginary regularizer; smaller = sharper but slower / noisier.
+
+    Note: `eta` smooths the density, so a small amount of mass leaks out of
+    integrable edge singularities (e.g. the arcsine's 1/sqrt endpoints) -- the
+    returned density integrates to slightly under 1. That is the regularizer at
+    work, not a bug; shrink `eta` to tighten it.
     """
     x = np.asarray(x, dtype=float)
     z = x + 1j * eta
