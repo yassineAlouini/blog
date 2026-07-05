@@ -1,0 +1,8 @@
+numpy>=1.24
+scipy>=1.10
+matplotlib>=3.7
+
+# Optional, only for the "real network" extensions mentioned in the posts:
+#   torch         # train a tiny net / compute a real Jacobian
+#   pyhessian     # Hessian eigenvalue spectral density (SLQ) on a real model
+#   weightwatcher # heavy-tailed self-regularization diagnostics on real weights
