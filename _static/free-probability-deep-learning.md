@@ -34,48 +34,53 @@ trainability of deep networks.
    2. Intuition: "free" = independent + maximally non-aligned eigenbases
    3. Asymptotic freeness of random matrices (Voiculescu's theorem)
    4. Worked micro-example: free vs classical for $2\times2$ blocks
-4. **The analytic machinery: transforms**
+4. **Free products: where free random variables live**
+   1. Classical independence ↔ tensor product; free independence ↔ **free product**
+   2. The free product of non-commutative probability spaces $(\mathcal{A}, \tau) = \ast_i (\mathcal{A}_i, \tau_i)$
+   3. Voiculescu's motivation: free group factors $L(\mathbb{F}_n)$ and the isomorphism problem
+   4. From free product to free convolution: the laws of $a+b$ and $ab$ for free $a,b$
+5. **The analytic machinery: transforms**
    1. Cauchy / Stieltjes transform $G(z)$ and inversion (fix the $z-t$ sign convention)
    2. Moments, free cumulants and non-crossing partitions (the combinatorial backbone)
    3. The **R-transform** — generating function of free cumulants; linearizes free *additive* convolution
    4. The **S-transform** — linearizes free *multiplicative* convolution (needs nonzero mean)
-5. **Free convolution**
+6. **Free convolution**
    1. Free additive convolution $\mu \boxplus \nu$ via the R-transform
    2. Free multiplicative convolution $\mu \boxtimes \nu$ via the S-transform
    3. Subordination functions and why convolutions are hard to compute in practice
    4. Numerically computing a free convolution (fixed-point / subordination)
-6. **Limiting spectral distributions**
+7. **Limiting spectral distributions**
    1. The **free Central Limit Theorem** → Wigner semicircle law
    2. The **free Poisson** → Marchenko–Pastur law (Wishart matrices)
    3. Free stability, free infinite divisibility (the "free" analogues of Gaussian/Poisson/stable)
    4. Sums and products: what $\boxplus$ and $\boxtimes$ do to the support
-7. **Bridge I — the Hessian as a sum: $\boxplus$ and the R-transform**
+8. **Bridge I — the Hessian as a sum: $\boxplus$ and the R-transform**
    1. The classical decomposition $H = H_0 + H_1$ (Gauss–Newton/Fisher term + residual term)
    2. Wishart $\boxplus$ Wigner: Pennington & Bahri's loss-surface model
    3. Energy vs index: how the spectrum (and negative eigenvalues) move with loss
    4. What it predicts about saddle points and critical-point structure
-8. **Bridge II — the Jacobian as a product: $\boxtimes$ and the S-transform**
+9. **Bridge II — the Jacobian as a product: $\boxtimes$ and the S-transform**
    1. Deep network input–output Jacobian as a product of layer matrices
    2. S-transform of a product = product of S-transforms → whole singular spectrum
    3. **Dynamical isometry**: concentrating all singular values near 1
    4. Choice of nonlinearity, weight init (orthogonal vs Gaussian), depth scaling
    5. Spectral universality: limiting distributions that survive depth $\to \infty$
-9. **Bridge III — kernels, nonlinear RMT and the NTK**
-   1. Single nonlinear Gram matrix: a deformed-MP self-consistent equation (Pennington–Worah)
-   2. Iterating it layer by layer: Conjugate Kernel & NTK spectra (Fan–Wang)
-   3. Spiked models / outliers: the BBP transition (top eigenvalues, "spikes")
-   4. Gaussian equivalence and where it holds / breaks
-10. **Empirical playground (code)**
+10. **Bridge III — kernels, nonlinear RMT and the NTK**
+    1. Single nonlinear Gram matrix: a deformed-MP self-consistent equation (Pennington–Worah)
+    2. Iterating it layer by layer: Conjugate Kernel & NTK spectra (Fan–Wang)
+    3. Spiked models / outliers: the BBP transition (top eigenvalues, "spikes")
+    4. Gaussian equivalence and where it holds / breaks
+11. **Empirical playground (code)**
     1. Simulating asymptotic freeness: two random matrices, free vs classical sum
     2. Numerically evaluating $\boxplus$ / $\boxtimes$ and overlaying on histograms
     3. Measuring a real network's Hessian spectrum with **PyHessian** (SLQ)
     4. Jacobian singular values vs the S-transform prediction across depth
     5. Watching weight-matrix spectra drift from Marchenko–Pastur during training
-11. **Tensions and open questions**
+12. **Tensions and open questions**
     1. Why empirical Hessians *don't* look like clean Wishart/MP (Gaussian-equivalence limits)
     2. Heavy-tailed self-regularization (HT-SR) vs the bulk RMT picture
     3. Finite width, correlated weights, structure after training
-12. **Resources** — theory, surveys, papers, code
+13. **Resources** — theory, surveys, papers, code
 
 ---
 
@@ -109,7 +114,39 @@ Wigner/Wishart) become asymptotically free as $N\to\infty$. This is the theorem 
 licenses everything downstream. Small concrete example to make "free $\ne$
 independent" tangible.
 
-### 4. The analytic machinery: transforms
+### 4. Free products: where free random variables live
+The construction that *realizes* freeness. Classical probability models
+independence with the **tensor product** of spaces; free probability models
+freeness with the **free product**. Given non-commutative probability spaces
+$(\mathcal{A}_i, \tau_i)$, their free product $(\mathcal{A}, \tau) = \ast_i
+(\mathcal{A}_i, \tau_i)$ is the algebra they generate with the free relation baked
+in — the canonical copies of the $\mathcal{A}_i$ sitting inside are automatically
+free. So "freeness" is not just an abstract rule on traces (§3); the free product
+is the concrete *home* where free random variables actually live (realized on the
+**full Fock space** via creation/annihilation operators — the free analogue of the
+Gaussian/Bosonic Fock space).
+
+Two threads to pull, one historical and one that we need downstream:
+- **Historical / motivational.** Voiculescu introduced free probability precisely
+  to attack the **free group factor isomorphism problem**: are the von Neumann
+  algebras $L(\mathbb{F}_m)$ and $L(\mathbb{F}_n)$ isomorphic for $m \neq n$? The
+  group von Neumann algebra of a free product of groups is the (von Neumann) free
+  product of their algebras, and freeness is exactly the structure the free
+  generators exhibit. (The problem is still open — a great "this math is alive"
+  aside.)
+- **Operational.** The free product is *where free convolution happens*: $\mu
+  \boxplus \nu$ and $\mu \boxtimes \nu$ (§6) are defined as the distributions of
+  $a+b$ and $ab$ when $a,b$ are the canonical free copies of variables with laws
+  $\mu,\nu$ living in the free product. And **asymptotic freeness** (§3) is the
+  statement that large random matrices *approximate* elements of a free product —
+  which is the whole reason any of this touches deep learning. Also flag free
+  products of measures / graphs (free random walks) as the combinatorial cousin.
+
+Keep it short and intuitive — one schematic (tensor product vs free product), no
+operator-algebra prerequisites; the payoff is that the reader sees free
+convolution as "compute in the free product, then read off the law."
+
+### 5. The analytic machinery: transforms
 The toolbox. Define $G_\mu(z) = \int \frac{d\mu(t)}{z-t}$ (pin the $z-t$ convention
 once — some texts use $t-z$). Introduce **free cumulants** and **non-crossing
 partitions** *first*, since the R-transform is exactly their generating function —
@@ -121,14 +158,14 @@ is the multiplicative analogue (defined only when $\int t\,d\mu \neq 0$).
 Box: "R-transform : freeness :: log-characteristic function : classical
 independence."
 
-### 5. Free convolution
+### 6. Free convolution
 Define $\mu \boxplus \nu$ (spectrum of $A+B$ for free $A,B$) via $R_{\mu\boxplus\nu} =
 R_\mu + R_\nu$, and $\mu \boxtimes \nu$ (spectrum of $\sqrt{A}\,B\,\sqrt{A}$) via
 $S_{\mu\boxtimes\nu} = S_\mu \cdot S_\nu$. Be honest that closed forms are rare:
 inverting $G$ is hard, so practitioners use **subordination functions** and
-fixed-point iteration. Set up the code in §10.2.
+fixed-point iteration. Set up the code in §11.2.
 
-### 6. Limiting spectral distributions
+### 7. Limiting spectral distributions
 The "named distributions." Free CLT: the *rescaled* sum
 $(a_1 + \dots + a_n)/\sqrt{n}$ of free, centered, variance-1 laws $\to$
 **semicircle** (the free Gaussian) — the $1/\sqrt n$ is essential, without it the
@@ -138,7 +175,7 @@ infinite divisibility get a one-line remark only — lovely, but no payoff in th
 bridges below.) Tie each to a DL object: semicircle ↔ symmetric weight/Wigner terms,
 MP ↔ Gram/covariance/Gauss–Newton terms.
 
-### 7. Bridge I — the Hessian as a sum
+### 8. Bridge I — the Hessian as a sum
 The first real payoff. Use the **classical** Hessian decomposition $H = H_0 + H_1$
 (Schraudolph; LeCun et al.): $H_0$ = the positive-semidefinite Gauss–Newton/Fisher
 ("functional", Wishart-like) term, $H_1$ = the residual-weighted term (indefinite,
@@ -150,7 +187,7 @@ the spectrum interpolates between MP-like (low loss, an eigenvalue gap, mostly
 convex) and semicircle-like (high loss, negative eigenvalues / saddles emerge), with
 the index of critical points rising with energy. Reproduce their energy–index curve.
 
-### 8. Bridge II — the Jacobian as a product
+### 9. Bridge II — the Jacobian as a product
 The second payoff, and the cleanest use of the S-transform. The input–output
 Jacobian of an $L$-layer net is a **product** $J = \prod_l D_l W_l$. The S-transform
 machinery acts on the limiting distribution of the **squared singular values** of
@@ -165,7 +202,7 @@ weight init so the entire spectrum concentrates near 1, killing exploding/vanish
 signals and letting *very* deep nets train. Cover the sigmoid-resurrection result
 and the depth-independent **universal** limiting spectra.
 
-### 9. Bridge III — kernels, nonlinear RMT and the NTK
+### 10. Bridge III — kernels, nonlinear RMT and the NTK
 Round out the picture — but scope it honestly, this is harder than Bridges I+II
 combined, so aim for "the spectra exist and are computable, here is the shape," not
 full derivations. Two *distinct* results, kept separate:
@@ -180,11 +217,11 @@ full derivations. Two *distinct* results, kept separate:
 
 Briefly add **spiked models / the BBP transition** — a finite-rank perturbation of a
 bulk pops out outlier eigenvalues past a threshold; this is the tool behind the
-"spikes" seen in real Hessian/weight spectra (§10.5). Close with **Gaussian
+"spikes" seen in real Hessian/weight spectra (§11.5). Close with **Gaussian
 equivalence** as the bridge that makes nonlinear features tractable, and where it
 breaks.
 
-### 10. Empirical playground (code)
+### 11. Empirical playground (code)
 Make it runnable. Planned snippets (numpy / scipy / pytorch):
 - **Asymptotic freeness demo**: sample two large symmetric random matrices, compare
   the histogram of $A+B$ against the *classical* convolution of the marginals and
@@ -194,14 +231,14 @@ Make it runnable. Planned snippets (numpy / scipy / pytorch):
   semicircle.
 - **Real Hessian spectrum**: use **PyHessian** (Stochastic Lanczos Quadrature) on a
   small CNN; ask "does the bulk match a Wishart $\boxplus$ Wigner fit?" — frame it as
-  *partial agreement* (sets up the §11 tension, don't oversell the match).
+  *partial agreement* (sets up the §12 tension, don't oversell the match).
 - **Jacobian vs S-transform**: build deep nets at varying depth/init, plot empirical
   singular-value histogram against the S-transform prediction; show
   orthogonal+tuned-gain isometry vs Gaussian spreading.
 - **Training drift**: track a weight matrix's spectrum from Marchenko–Pastur at init
   toward heavier-tailed/spiked shapes during training.
 
-### 11. Tensions and open questions
+### 12. Tensions and open questions
 Don't oversell. Be explicit that empirical Hessians often *don't* show clean MP/
 Wishart bulks; discuss the Gaussian-equivalence caveats, **heavy-tailed
 self-regularization** (Martin & Mahoney) as an alternative lens, and the gap between
@@ -223,7 +260,11 @@ reality.
   <https://terrytao.wordpress.com/tag/free-probability/>
 - Voiculescu, *Limit laws for random matrices and free products* (1991) — the
   asymptotic-freeness theorem that licenses Haar-conjugation → freeness (cited by
-  §3/§8).
+  §3, §4, §9).
+- **Free products & free group factors** (§4): Voiculescu, Dykema & Nica cover the
+  free-product construction; see also Voiculescu's *Symmetries of some reduced free
+  product C\*-algebras* (1985) for the origin, and any survey of the still-open
+  $L(\mathbb{F}_n)$ isomorphism problem.
 - **Subordination** (the analytic backbone of numerical free convolution): Biane,
   *Processes with free increments* (1998); Belinschi–Bercovici; Chistyakov–Götze.
 - Survey on free convolution & subordination (numerical difficulty / subordination
@@ -272,7 +313,7 @@ reality.
   PyTorch nets. Paper: <https://arxiv.org/abs/1912.07145> · Code:
   <https://github.com/amirgholami/PyHessian>
 - Asymptotic-freeness & free-convolution numerics: implement Cauchy-transform
-  subordination in numpy/scipy (planned in §10; see Mingo–Speicher Ch. on
+  subordination in numpy/scipy (planned in §11; see Mingo–Speicher Ch. on
   computation and the subordination survey above).
 - `RMT4DL` / random-matrix demos and the loss-surface reproductions accompanying the
   Pennington papers (search the authors' code releases).
