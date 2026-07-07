@@ -137,7 +137,10 @@ Two threads to pull, one historical and one that we need downstream:
 - **Operational.** The free product is *where free convolution happens*: $\mu
   \boxplus \nu$ and $\mu \boxtimes \nu$ (§6) are defined as the distributions of
   $a+b$ and $ab$ when $a,b$ are the canonical free copies of variables with laws
-  $\mu,\nu$ living in the free product. And **asymptotic freeness** (§3) is the
+  $\mu,\nu$ living in the free product. (Under the trace, $ab$ has the same
+  spectral law as the self-adjoint $\sqrt{a}\,b\,\sqrt{a}$ that §6 uses — same
+  $\boxtimes$, just a symmetrized representative.) And **asymptotic freeness**
+  (§3) is the
   statement that large random matrices *approximate* elements of a free product —
   which is the whole reason any of this touches deep learning. Also flag free
   products of measures / graphs (free random walks) as the combinatorial cousin.
