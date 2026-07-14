@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Random Matrices Meet Deep Learning — series roadmap</title>
+<link rel="stylesheet" href="../assets/style.css">
+<link rel="stylesheet" href="../assets/pygments.css">
+<script>window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']]},svg:{fontCache:'global'}};</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
+</head><body>
+
+<a class="back" href="../index.html">← All posts</a>
+<article>
+  <header class="post-head">
+    <div class="tags"><span class="tag tag--wip">WIP</span><span class="tag">Random Matrix Theory</span><span class="tag">Deep Learning Theory</span><span class="tag">Series</span></div>
+    <h1>Random Matrices Meet Deep Learning — series roadmap</h1>
+    <p class="subtitle">The plan for a multi-post series on the unexpected links between random matrix theory and deep learning.</p>
+    
+  </header>
+  
+  <div class="nb"><div class="md"><!-- DRAFT / SERIES ROADMAP — planning doc, not yet registered in build.py.
+     Organizes a multi-post series on RMT × deep learning. Each post has an
+     explicit "unexpected link" as its spine. The free-probability post
+     (_static/free-probability-deep-learning.md) is Post 1. -->
+
+<blockquote>
+<p><strong>Status: series roadmap (draft).</strong> A planning document for a series of blog
+posts. The thesis, the per-post hooks, and the dependency order live here; each
+post gets its own <code>_static/&lt;slug&gt;.md</code> as it's written.</p>
+</blockquote>
+<h1>Random Matrices Meet Deep Learning — a series</h1>
+<p><strong>The thesis.</strong> The central objects of deep learning are <em>large random matrices</em>:
+weight matrices, input–output Jacobians, loss Hessians, kernels (CK/NTK), data
+covariances. Random Matrix Theory (RMT) is the physics of their <strong>eigenvalue
+spectra</strong>. The fun isn't that RMT <em>applies</em> — it's that it keeps producing results
+that are genuinely <strong>surprising</strong>: phenomena practitioners discovered empirically
+(double descent, scaling laws, trainability of very deep nets, &quot;spikes&quot; in the
+Hessian) turn out to be <em>predicted</em>, sometimes exactly, by a spectral law written
+down decades earlier for nuclear physics or statistics.</p>
+<p><strong>Editorial rule for the series.</strong> Every post is built around <em>one</em> unexpected link:
+<em>&quot;you'd never guess that [DL phenomenon] is really [RMT object].&quot;</em> Lead with the
+surprise, then earn it. Keep an honest &quot;where it breaks&quot; note in each.</p>
+<hr />
+<h2>The arc (each post = one unexpected link)</h2>
+<h3>Post 1 — The semicircle hiding in your loss landscape</h3>
+<p><em>RMT idea:</em> <strong>free probability &amp; free convolution</strong> (R-transform / ⊞, S-transform / ⊠).
+<em>DL objects:</em> the <strong>Hessian</strong> (a sum → ⊞) and the <strong>Jacobian</strong> (a product → ⊠).
+<em>The unexpected link:</em> you can train a <strong>10,000-layer</strong> vanilla network by <em>tuning a
+free-multiplicative-convolution spectrum</em> (dynamical isometry) — and the loss
+Hessian's shape (convex bowl vs. saddle-riddled) is a <strong>Wishart ⊞ Wigner</strong> density
+that morphs with the loss value.
+<em>Draft:</em> <code>_static/free-probability-deep-learning.md</code> (already scaffolded &amp; reviewed).
+<em>Status:</em> outline complete, prose pending. <strong>This is the theory backbone for the series.</strong></p>
+<h3>Post 2 — Heavy tails know your test accuracy</h3>
+<p><em>RMT idea:</em> <strong>heavy-tailed spectra / power laws</strong> (vs. the clean Marchenko–Pastur bulk).
+<em>DL object:</em> trained <strong>weight matrices</strong>.
+<em>The unexpected link:</em> fit a power law to a weight matrix's eigenvalue density and
+its <strong>exponent predicts generalization</strong> — <em>without ever touching the test set, the
+training labels, or even the data.</em> Heavy-Tailed Self-Regularization (Martin &amp;
+Mahoney); the <code>weightwatcher</code> tool operationalizes it. Also: the &quot;5+1 phases&quot; a
+weight spectrum passes through during training (random → bulk+spikes → heavy-tailed).
+<em>Why it's surprising:</em> generalization, allegedly a data-dependent quantity, leaves a
+fingerprint in the <em>weights alone</em>.</p>
+<h3>Post 3 — Double descent is a Marchenko–Pastur edge</h3>
+<p><em>RMT idea:</em> the <strong>Marchenko–Pastur law</strong> and the divergence of the <strong>smallest
+eigenvalue</strong> as the aspect ratio → 1.
+<em>DL phenomenon:</em> the <strong>double-descent</strong> test-error curve.
+<em>The unexpected link:</em> the notorious error <em>explosion at the interpolation threshold</em>
+(<span class="math">\(n \approx p\)</span>) is just the MP edge — the sample-covariance / feature-Gram matrix
+becomes <strong>ill-conditioned</strong> exactly there, and <em>over</em>-parameterizing past it
+<strong>improves conditioning</strong> and lowers error. The bump isn't mysterious; it's a
+vanishing eigenvalue. (Belkin et al.; Hastie–Montanari–Rosset–Tibshirani;
+Mei–Montanari; Nakkiran et al.)</p>
+<h3>Post 4 — Scaling laws fall out of a power-law spectrum</h3>
+<p><em>RMT idea:</em> <strong>spectra of random-feature / kernel matrices</strong> when the <strong>data
+covariance is power-law</strong>.
+<em>DL phenomenon:</em> <strong>neural scaling laws</strong> (loss ∝ (data or params)<span class="math">\(^{-\alpha}\)</span>).
+<em>The unexpected link:</em> a <em>solvable</em> random-feature model reproduces the empirical
+scaling exponents analytically — and the exponent <span class="math">\(\alpha\)</span> is <strong>set by the power-law
+tail of the data covariance spectrum</strong>. The &quot;magic numbers&quot; in scaling-law plots are
+an RMT readout of the dataset's spectrum. (Maloney, Roberts &amp; Sully, <em>A Solvable
+Model of Neural Scaling Laws</em>, arXiv:2210.16859; Bahri et al., <em>Explaining Neural
+Scaling Laws</em>.)</p>
+<h3>Post 5 — Universality: the spectral edge ignores your architecture</h3>
+<p><em>RMT idea:</em> <strong>universality</strong> — Wigner semicircle, Tracy–Widom edge, local eigenvalue
+spacing — laws that don't depend on microscopic details.
+<em>DL object:</em> Hessian / Jacobian / weight spectra across architectures &amp; nonlinearities.
+<em>The unexpected link:</em> swap the nonlinearity, the init, the data — and the
+<strong>limiting bulk and the microscopic edge statistics stay the same</strong>. Deep nets
+inherit RMT's universality, which is <em>why</em> RMT predictions transfer at all.
+(Pennington–Schoenholz–Ganguli spectral universality; Tracy–Widom at the Hessian edge.)</p>
+<h3>Post 6 — Signal vs. noise: spikes, BBP, and what the network learned</h3>
+<p><em>RMT idea:</em> <strong>spiked models &amp; the BBP phase transition</strong> (a low-rank perturbation
+pops outliers out of the bulk past a threshold).
+<em>DL object:</em> the few <strong>outlier</strong> eigenvalues of the Hessian / Gram matrices.
+<em>The unexpected link:</em> the number and structure of Hessian <strong>&quot;spikes&quot; mirrors the
+label structure</strong> — e.g. roughly one outlier cluster per class; class/cross-class
+geometry is legible in the spectrum. Signal (what's learned) literally separates from
+noise (the bulk) at a sharp threshold. (Papyan, <em>Traces of class/cross-class
+structure</em>; BBP.)</p>
+<h3>Post 7 (capstone / optional) — Where RMT breaks, and why that's interesting too</h3>
+<p><em>The honest chapter:</em> Gaussian-equivalence assumptions failing, finite-width
+corrections, correlated/structured weights after training, and the unresolved
+&quot;empirical Hessian ≠ clean Wishart&quot; puzzle. The frontier, not a footnote.</p>
+<hr />
+<h2>Dependency / reading order</h2>
+<ul>
+<li><strong>Post 1</strong> is the toolbox (free convolution, MP, semicircle) — write/publish first.</li>
+<li><strong>Posts 2–6</strong> are <em>independent</em> and can ship in any order; each re-introduces only
+the one RMT tool it needs (link back to Post 1 for depth).</li>
+<li><strong>Post 7</strong> is a capstone — write last.</li>
+<li>Recommended publish order by &quot;hook strength / shareability&quot;: <strong>3 (double descent)</strong>
+or <strong>2 (heavy tails predict accuracy)</strong> make the punchiest standalone second post.</li>
+</ul>
+<h2>Cross-cutting assets to build once, reuse everywhere</h2>
+<ul>
+<li>A small <strong><code>numpy/scipy</code> RMT toolkit</strong>: sample Wigner/Wishart, compute empirical
+spectral density, Marchenko–Pastur &amp; semicircle reference curves, a free-convolution
+(subordination fixed-point) routine. Reused in Posts 1, 3, 5, 6.</li>
+<li>A <strong>PyHessian</strong> harness (SLQ spectral density on a small net) — Posts 1, 5, 6.</li>
+<li>A consistent <strong>watercolor-styled spectral-density plot</strong> template (matplotlib →
+styled SVG) so every post's spectra look like one family.</li>
+</ul>
+<h2>Series-wide resources (beyond Post 1's list)</h2>
+<ul>
+<li>Martin &amp; Mahoney, <em>Implicit Self-Regularization in Deep Neural Networks: Evidence
+from Random Matrix Theory</em> (HT-SR); <code>weightwatcher</code>:
+<a href="https://github.com/CalculatedContent/WeightWatcher">https://github.com/CalculatedContent/WeightWatcher</a></li>
+<li>Belkin, Hsu, Ma, Mandal, <em>Reconciling modern ML practice and the bias–variance
+trade-off</em> (double descent), PNAS 2019.</li>
+<li>Hastie, Montanari, Rosset, Tibshirani, <em>Surprises in High-Dimensional Ridgeless
+Least Squares Interpolation</em>. <a href="https://arxiv.org/abs/1903.08560">https://arxiv.org/abs/1903.08560</a></li>
+<li>Mei &amp; Montanari, <em>The generalization error of random features regression</em>.
+<a href="https://arxiv.org/abs/1908.05355">https://arxiv.org/abs/1908.05355</a></li>
+<li>Nakkiran et al., <em>Deep Double Descent</em>. <a href="https://arxiv.org/abs/1912.02292">https://arxiv.org/abs/1912.02292</a></li>
+<li>Maloney, Roberts, Sully, <em>A Solvable Model of Neural Scaling Laws</em>.
+<a href="https://arxiv.org/abs/2210.16859">https://arxiv.org/abs/2210.16859</a></li>
+<li>Bahri, Dyer, Kaplan, Lee, Sharma, <em>Explaining Neural Scaling Laws</em>, PNAS 2024.
+<a href="https://arxiv.org/abs/2102.06701">https://arxiv.org/abs/2102.06701</a></li>
+<li>Papyan, <em>Traces of Class/Cross-Class Structure Pervade Deep Learning Spectra</em>.
+<a href="https://arxiv.org/abs/2008.11865">https://arxiv.org/abs/2008.11865</a></li>
+<li>Pastur, <em>Appearance of Random Matrix Theory in Deep Learning</em> (survey).
+<a href="https://arxiv.org/abs/2102.06740">https://arxiv.org/abs/2102.06740</a></li>
+</ul>
+<h2>Publishing mechanics</h2>
+<ul>
+<li>Category for all: <code>[&quot;Research&quot;]</code> (consider adding a new <strong>&quot;Math / Theory&quot;</strong> section
+in <code>build.py</code>, or a dedicated <strong>&quot;RMT × Deep Learning&quot;</strong> section so the series groups
+together on the landing page).</li>
+<li>Each post links to the next/prev to read as a series.</li>
+<li>Keep slugs uniform: <code>rmt-&lt;topic&gt;</code> (e.g. <code>rmt-free-probability</code>, <code>rmt-heavy-tails</code>,
+<code>rmt-double-descent</code>, <code>rmt-scaling-laws</code>, <code>rmt-universality</code>, <code>rmt-spikes</code>).
+<em>(Post 1 currently lives at <code>free-probability-deep-learning</code> — rename to
+<code>rmt-free-probability</code> on publish for consistency.)</em></li>
+</ul>
+</div></div>
+</article>
+<footer class="post-foot">Series roadmap (work in progress) · built 2026-07-14</footer>
+
+</body></html>

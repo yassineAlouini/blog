@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Free Probability &amp; Deep Learning (draft)</title>
+<link rel="stylesheet" href="../assets/style.css">
+<link rel="stylesheet" href="../assets/pygments.css">
+<script>window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']]},svg:{fontCache:'global'}};</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
+</head><body>
+
+<a class="back" href="../index.html">← All posts</a>
+<article>
+  <header class="post-head">
+    <div class="tags"><span class="tag tag--wip">WIP</span><span class="tag">Free Probability</span><span class="tag">Random Matrix Theory</span><span class="tag">Deep Learning Theory</span></div>
+    <h1>Free Probability &amp; Deep Learning (draft)</h1>
+    <p class="subtitle">Free convolution, limiting spectra, and the Hessian / Jacobian / kernel bridges — Post 1 of the RMT × Deep Learning series.</p>
+    
+  </header>
+  
+  <div class="nb"><div class="md"><!-- DRAFT — Post 1 of the "Random Matrices Meet Deep Learning" series
+     (roadmap: _static/rmt-deep-learning-series.md). Not yet registered in
+     build.py / MD_POSTS. To publish: add an MD_POSTS entry and run python3
+     build.py. Slug to rename to "rmt-free-probability" on publish. -->
+
+<blockquote>
+<p><strong>Status: draft / outline — Post 1 of the <em>Random Matrices Meet Deep Learning</em>
+series.</strong> This page is the theory backbone for the series: a thorough table of
+contents, a section-by-section plan, and a curated resource list (theory + code).
+Prose, figures and worked examples get filled in per section before publishing.
+The unexpected hooks (double descent as a Marchenko–Pastur edge, heavy tails that
+predict test accuracy, scaling laws from a power-law spectrum, …) get their own
+later posts — see the roadmap.</p>
+</blockquote>
+<p>Free probability is the strange and beautiful corner of mathematics that asks:
+<em>what is &quot;independence&quot; when your random variables don't commute</em> — when they are
+large matrices instead of scalars? Dan-Virgil Voiculescu's answer, <strong>freeness</strong>,
+turns out to be exactly the notion that governs the eigenvalue spectra of large
+random matrices. And large random matrices are everywhere in deep learning:
+weight matrices, Jacobians, Hessians, kernels. This post is a guided tour from
+the abstract algebra to concrete predictions about the loss-surface geometry and
+trainability of deep networks.</p>
+<hr />
+<h2>Table of contents</h2>
+<ol>
+<li><strong>Why free probability for deep learning?</strong> — the one-paragraph pitch</li>
+<li><strong>From scalars to operators</strong> — classical vs non-commutative probability<ol>
+<li>Random variables as operators; the trace as expectation</li>
+<li>Spectral distribution of a (random) matrix</li>
+<li>Why ordinary independence is the wrong tool for matrices</li>
+</ol>
+</li>
+<li><strong>Freeness: the central idea</strong><ol>
+<li>Voiculescu's definition of free independence</li>
+<li>Intuition: &quot;free&quot; = independent + maximally non-aligned eigenbases</li>
+<li>Asymptotic freeness of random matrices (Voiculescu's theorem)</li>
+<li>Worked micro-example: free vs classical for <span class="math">\(2\times2\)</span> blocks</li>
+</ol>
+</li>
+<li><strong>Free products: where free random variables live</strong><ol>
+<li>Classical independence ↔ tensor product; free independence ↔ <strong>free product</strong></li>
+<li>The free product of non-commutative probability spaces <span class="math">\((\mathcal{A}, \tau) = \ast_i (\mathcal{A}_i, \tau_i)\)</span></li>
+<li>Voiculescu's motivation: free group factors <span class="math">\(L(\mathbb{F}_n)\)</span> and the isomorphism problem</li>
+<li>From free product to free convolution: the laws of <span class="math">\(a+b\)</span> and <span class="math">\(ab\)</span> for free <span class="math">\(a,b\)</span></li>
+</ol>
+</li>
+<li><strong>The analytic machinery: transforms</strong><ol>
+<li>Cauchy / Stieltjes transform <span class="math">\(G(z)\)</span> and inversion (fix the <span class="math">\(z-t\)</span> sign convention)</li>
+<li>Moments, free cumulants and non-crossing partitions (the combinatorial backbone)</li>
+<li>The <strong>R-transform</strong> — generating function of free cumulants; linearizes free <em>additive</em> convolution</li>
+<li>The <strong>S-transform</strong> — linearizes free <em>multiplicative</em> convolution (needs nonzero mean)</li>
+</ol>
+</li>
+<li><strong>Free convolution</strong><ol>
+<li>Free additive convolution <span class="math">\(\mu \boxplus \nu\)</span> via the R-transform</li>
+<li>Free multiplicative convolution <span class="math">\(\mu \boxtimes \nu\)</span> via the S-transform</li>
+<li>Subordination functions and why convolutions are hard to compute in practice</li>
+<li>Numerically computing a free convolution (fixed-point / subordination)</li>
+</ol>
+</li>
+<li><strong>Limiting spectral distributions</strong><ol>
+<li>The <strong>free Central Limit Theorem</strong> → Wigner semicircle law</li>
+<li>The <strong>free Poisson</strong> → Marchenko–Pastur law (Wishart matrices)</li>
+<li>Free stability, free infinite divisibility (the &quot;free&quot; analogues of Gaussian/Poisson/stable)</li>
+<li>Sums and products: what <span class="math">\(\boxplus\)</span> and <span class="math">\(\boxtimes\)</span> do to the support</li>
+</ol>
+</li>
+<li><strong>Bridge I — the Hessian as a sum: <span class="math">\(\boxplus\)</span> and the R-transform</strong><ol>
+<li>The classical decomposition <span class="math">\(H = H_0 + H_1\)</span> (Gauss–Newton/Fisher term + residual term)</li>
+<li>Wishart <span class="math">\(\boxplus\)</span> Wigner: Pennington &amp; Bahri's loss-surface model</li>
+<li>Energy vs index: how the spectrum (and negative eigenvalues) move with loss</li>
+<li>What it predicts about saddle points and critical-point structure</li>
+</ol>
+</li>
+<li><strong>Bridge II — the Jacobian as a product: <span class="math">\(\boxtimes\)</span> and the S-transform</strong><ol>
+<li>Deep network input–output Jacobian as a product of layer matrices</li>
+<li>S-transform of a product = product of S-transforms → whole singular spectrum</li>
+<li><strong>Dynamical isometry</strong>: concentrating all singular values near 1</li>
+<li>Choice of nonlinearity, weight init (orthogonal vs Gaussian), depth scaling</li>
+<li>Spectral universality: limiting distributions that survive depth <span class="math">\(\to \infty\)</span></li>
+</ol>
+</li>
+<li><strong>Bridge III — kernels, nonlinear RMT and the NTK</strong><ol>
+<li>Single nonlinear Gram matrix: a deformed-MP self-consistent equation (Pennington–Worah)</li>
+<li>Iterating it layer by layer: Conjugate Kernel &amp; NTK spectra (Fan–Wang)</li>
+<li>Spiked models / outliers: the BBP transition (top eigenvalues, &quot;spikes&quot;)</li>
+<li>Gaussian equivalence and where it holds / breaks</li>
+</ol>
+</li>
+<li><strong>Empirical playground (code)</strong><ol>
+<li>Simulating asymptotic freeness: two random matrices, free vs classical sum</li>
+<li>Numerically evaluating <span class="math">\(\boxplus\)</span> / <span class="math">\(\boxtimes\)</span> and overlaying on histograms</li>
+<li>Measuring a real network's Hessian spectrum with <strong>PyHessian</strong> (SLQ)</li>
+<li>Jacobian singular values vs the S-transform prediction across depth</li>
+<li>Watching weight-matrix spectra drift from Marchenko–Pastur during training</li>
+</ol>
+</li>
+<li><strong>Tensions and open questions</strong><ol>
+<li>Why empirical Hessians <em>don't</em> look like clean Wishart/MP (Gaussian-equivalence limits)</li>
+<li>Heavy-tailed self-regularization (HT-SR) vs the bulk RMT picture</li>
+<li>Finite width, correlated weights, structure after training</li>
+</ol>
+</li>
+<li><strong>Resources</strong> — theory, surveys, papers, code</li>
+</ol>
+<hr />
+<h2>Section-by-section plan</h2>
+<h3>1. Why free probability for deep learning?</h3>
+<p>One tight motivating paragraph + a teaser figure. The hook: three central objects
+of DL theory are large random matrices whose spectra we care about — the <strong>Hessian</strong>
+(loss geometry / optimization), the <strong>input–output Jacobian</strong> (signal propagation /
+trainability), and <strong>kernels</strong> (CK/NTK, generalization). Free probability is the
+algebra of <em>combining</em> such matrices: sums (Hessian decomposition) via <span class="math">\(\boxplus\)</span>,
+products (deep Jacobian) via <span class="math">\(\boxtimes\)</span>. Promise: by the end, the reader can read a
+spectrum and predict how depth/init/nonlinearity reshape it.</p>
+<h3>2. From scalars to operators</h3>
+<p>Keep it gentle. Define a non-commutative probability space <span class="math">\((\mathcal{A}, \tau)\)</span>
+with <span class="math">\(\tau\)</span> a trace playing the role of <span class="math">\(\mathbb{E}\)</span>. For an <span class="math">\(N\times N\)</span> Hermitian
+matrix <span class="math">\(M\)</span>, the normalized trace <span class="math">\(\frac1N \mathrm{Tr}\)</span> recovers the empirical
+spectral distribution <span class="math">\(\mu_M = \frac1N \sum_i \delta_{\lambda_i}\)</span>. Punchline of the
+section: <em>adding two matrices mixes their eigenvectors</em>, so the spectrum of <span class="math">\(A+B\)</span> is
+<strong>not</strong> a classical convolution of the two spectra — we need a new notion of
+independence.</p>
+<h3>3. Freeness: the central idea</h3>
+<p>State Voiculescu's definition (alternating centered products of elements from free
+subalgebras have trace zero). Then immediately translate to intuition: freeness is
+what you get when two matrices are in <strong>generic relative position</strong> — random
+rotation between their eigenbases. State the <strong>asymptotic freeness</strong> theorem:
+independent random matrices (e.g. one fixed, one Haar-rotated, or two independent
+Wigner/Wishart) become asymptotically free as <span class="math">\(N\to\infty\)</span>. This is the theorem that
+licenses everything downstream. Small concrete example to make &quot;free <span class="math">\(\ne\)</span>
+independent&quot; tangible.</p>
+<h3>4. Free products: where free random variables live</h3>
+<p>The construction that <em>realizes</em> freeness. Classical probability models
+independence with the <strong>tensor product</strong> of spaces; free probability models
+freeness with the <strong>free product</strong>. Given non-commutative probability spaces
+<span class="math">\((\mathcal{A}_i, \tau_i)\)</span>, their free product $(\mathcal{A}, \tau) = \ast_i
+(\mathcal{A}_i, \tau_i)$ is the algebra they generate with the free relation baked
+in — the canonical copies of the <span class="math">\(\mathcal{A}_i\)</span> sitting inside are automatically
+free. So &quot;freeness&quot; is not just an abstract rule on traces (§3); the free product
+is the concrete <em>home</em> where free random variables actually live (realized on the
+<strong>full Fock space</strong> via creation/annihilation operators — the free analogue of the
+Gaussian/Bosonic Fock space).</p>
+<p>Two threads to pull, one historical and one that we need downstream:</p>
+<ul>
+<li><strong>Historical / motivational.</strong> Voiculescu introduced free probability precisely
+to attack the <strong>free group factor isomorphism problem</strong>: are the von Neumann
+algebras <span class="math">\(L(\mathbb{F}_m)\)</span> and <span class="math">\(L(\mathbb{F}_n)\)</span> isomorphic for <span class="math">\(m \neq n\)</span>? The
+group von Neumann algebra of a free product of groups is the (von Neumann) free
+product of their algebras, and freeness is exactly the structure the free
+generators exhibit. (The problem is still open — a great &quot;this math is alive&quot;
+aside.)</li>
+<li><strong>Operational.</strong> The free product is <em>where free convolution happens</em>: $\mu
+\boxplus \nu$ and <span class="math">\(\mu \boxtimes \nu\)</span> (§6) are defined as the distributions of
+<span class="math">\(a+b\)</span> and <span class="math">\(ab\)</span> when <span class="math">\(a,b\)</span> are the canonical free copies of variables with laws
+<span class="math">\(\mu,\nu\)</span> living in the free product. (Under the trace, <span class="math">\(ab\)</span> has the same
+spectral law as the self-adjoint <span class="math">\(\sqrt{a}\,b\,\sqrt{a}\)</span> that §6 uses — same
+<span class="math">\(\boxtimes\)</span>, just a symmetrized representative.) And <strong>asymptotic freeness</strong>
+(§3) is the
+statement that large random matrices <em>approximate</em> elements of a free product —
+which is the whole reason any of this touches deep learning. Also flag free
+products of measures / graphs (free random walks) as the combinatorial cousin.</li>
+</ul>
+<p>Keep it short and intuitive — one schematic (tensor product vs free product), no
+operator-algebra prerequisites; the payoff is that the reader sees free
+convolution as &quot;compute in the free product, then read off the law.&quot;</p>
+<h3>5. The analytic machinery: transforms</h3>
+<p>The toolbox. Define <span class="math">\(G_\mu(z) = \int \frac{d\mu(t)}{z-t}\)</span> (pin the <span class="math">\(z-t\)</span> convention
+once — some texts use <span class="math">\(t-z\)</span>). Introduce <strong>free cumulants</strong> and <strong>non-crossing
+partitions</strong> <em>first</em>, since the R-transform is exactly their generating function —
+that is <em>why</em> it linearizes <span class="math">\(\boxplus\)</span> (the free analogue of the moment–cumulant
+relations). Then the <strong>R-transform</strong>: let <span class="math">\(K = G^{-1}\)</span> be the <em>compositional</em> inverse
+of the Cauchy transform (so <span class="math">\(G(K(z)) = z\)</span> — <strong>not</strong> the reciprocal <span class="math">\(1/G\)</span>); then
+<span class="math">\(R(z) = K(z) - \frac1z\)</span>, and <span class="math">\(R_{\mu\boxplus\nu} = R_\mu + R_\nu\)</span>. The <strong>S-transform</strong>
+is the multiplicative analogue (defined only when <span class="math">\(\int t\,d\mu \neq 0\)</span>).
+Box: &quot;R-transform : freeness :: log-characteristic function : classical
+independence.&quot;</p>
+<h3>6. Free convolution</h3>
+<p>Define <span class="math">\(\mu \boxplus \nu\)</span> (spectrum of <span class="math">\(A+B\)</span> for free <span class="math">\(A,B\)</span>) via $R_{\mu\boxplus\nu} =
+R_\mu + R_\nu<span class="math">\(, and \)</span>\mu \boxtimes \nu$ (spectrum of <span class="math">\(\sqrt{A}\,B\,\sqrt{A}\)</span>) via
+<span class="math">\(S_{\mu\boxtimes\nu} = S_\mu \cdot S_\nu\)</span>. Be honest that closed forms are rare:
+inverting <span class="math">\(G\)</span> is hard, so practitioners use <strong>subordination functions</strong> and
+fixed-point iteration. Set up the code in §11.2.</p>
+<h3>7. Limiting spectral distributions</h3>
+<p>The &quot;named distributions.&quot; Free CLT: the <em>rescaled</em> sum
+<span class="math">\((a_1 + \dots + a_n)/\sqrt{n}\)</span> of free, centered, variance-1 laws <span class="math">\(\to\)</span>
+<strong>semicircle</strong> (the free Gaussian) — the <span class="math">\(1/\sqrt n\)</span> is essential, without it the
+support blows up. Free Poisson limit <span class="math">\(\to\)</span> <strong>Marchenko–Pastur</strong> (Wishart /
+sample-covariance spectra), parameterized by aspect ratio. (Free stability / free
+infinite divisibility get a one-line remark only — lovely, but no payoff in the DL
+bridges below.) Tie each to a DL object: semicircle ↔ symmetric weight/Wigner terms,
+MP ↔ Gram/covariance/Gauss–Newton terms.</p>
+<h3>8. Bridge I — the Hessian as a sum</h3>
+<p>The first real payoff. Use the <strong>classical</strong> Hessian decomposition <span class="math">\(H = H_0 + H_1\)</span>
+(Schraudolph; LeCun et al.): <span class="math">\(H_0\)</span> = the positive-semidefinite Gauss–Newton/Fisher
+(&quot;functional&quot;, Wishart-like) term, <span class="math">\(H_1\)</span> = the residual-weighted term (indefinite,
+Wigner-like). The decomposition is <em>not</em> new; <strong>Pennington &amp; Bahri's</strong> contribution
+is to <em>model these two pieces as freely independent</em> and compute the spectrum of the
+sum via <span class="math">\(\boxplus\)</span> — a stylized <strong>Wishart <span class="math">\(\boxplus\)</span> Wigner</strong> density (a model, not a
+derivation from the true Hessian). Key qualitative predictions:
+the spectrum interpolates between MP-like (low loss, an eigenvalue gap, mostly
+convex) and semicircle-like (high loss, negative eigenvalues / saddles emerge), with
+the index of critical points rising with energy. Reproduce their energy–index curve.</p>
+<h3>9. Bridge II — the Jacobian as a product</h3>
+<p>The second payoff, and the cleanest use of the S-transform. The input–output
+Jacobian of an <span class="math">\(L\)</span>-layer net is a <strong>product</strong> <span class="math">\(J = \prod_l D_l W_l\)</span>. The S-transform
+machinery acts on the limiting distribution of the <strong>squared singular values</strong> of
+<span class="math">\(J\)</span> — i.e. on the spectrum of <span class="math">\(JJ^{\mathsf T}\)</span>, built from the PSD factors
+<span class="math">\((D_l W_l)(D_l W_l)^{\mathsf T}\)</span> (not the signed factors themselves). The load-bearing
+hypothesis is that these per-layer PSD factors are <strong>asymptotically free</strong> of one
+another (from independence of the <span class="math">\(W_l\)</span> + Haar/Gaussian structure, with <span class="math">\(D_l\)</span> free
+of <span class="math">\(W_l W_l^{\mathsf T}\)</span>); <em>given</em> that, <span class="math">\(\boxtimes\)</span>-multiplicativity of <span class="math">\(S\)</span> gives the
+whole spectrum without ever multiplying matrices. This yields <strong>dynamical isometry</strong>:
+tune nonlinearity + (orthogonal)
+weight init so the entire spectrum concentrates near 1, killing exploding/vanishing
+signals and letting <em>very</em> deep nets train. Cover the sigmoid-resurrection result
+and the depth-independent <strong>universal</strong> limiting spectra.</p>
+<h3>10. Bridge III — kernels, nonlinear RMT and the NTK</h3>
+<p>Round out the picture — but scope it honestly, this is harder than Bridges I+II
+combined, so aim for &quot;the spectra exist and are computable, here is the shape,&quot; not
+full derivations. Two <em>distinct</em> results, kept separate:</p>
+<ul>
+<li><strong>Pennington &amp; Worah (NeurIPS 2017)</strong> — the spectrum of a <em>single</em> nonlinear Gram
+matrix <span class="math">\(\frac1m f(WX)^{\mathsf T} f(WX)\)</span> is a <strong>deformed Marchenko–Pastur</strong> law,
+the solution of a quartic self-consistent (moment) equation governed by two
+parameters <span class="math">\((\eta,\zeta)\)</span> of the nonlinearity. (&quot;MP map&quot; is a slogan; the object is
+a self-consistent equation, not literally MP.)</li>
+<li><strong>Fan &amp; Wang (NeurIPS 2020)</strong> — <em>iterate</em> that map layer by layer (a multiplicative
+free convolution with an MP-like law) to get the <strong>Conjugate Kernel</strong> spectrum, and
+extend it via fixed-point equations to the <strong>NTK</strong> in the linear-width regime.</li>
+</ul>
+<p>Briefly add <strong>spiked models / the BBP transition</strong> — a finite-rank perturbation of a
+bulk pops out outlier eigenvalues past a threshold; this is the tool behind the
+&quot;spikes&quot; seen in real Hessian/weight spectra (§11.5). Close with <strong>Gaussian
+equivalence</strong> as the bridge that makes nonlinear features tractable, and where it
+breaks.</p>
+<h3>11. Empirical playground (code)</h3>
+<p>Make it runnable. Planned snippets (numpy / scipy / pytorch):</p>
+<ul>
+<li><strong>Asymptotic freeness demo</strong>: sample two large symmetric random matrices, compare
+the histogram of <span class="math">\(A+B\)</span> against the <em>classical</em> convolution of the marginals and
+against the <em>free</em> convolution — show only the free one matches.</li>
+<li><strong>Numerical free convolution</strong>: implement <span class="math">\(\boxplus\)</span> via Cauchy-transform
+subordination fixed point; overlay semicircle <span class="math">\(\boxplus\)</span> semicircle, MP <span class="math">\(\boxplus\)</span>
+semicircle.</li>
+<li><strong>Real Hessian spectrum</strong>: use <strong>PyHessian</strong> (Stochastic Lanczos Quadrature) on a
+small CNN; ask &quot;does the bulk match a Wishart <span class="math">\(\boxplus\)</span> Wigner fit?&quot; — frame it as
+<em>partial agreement</em> (sets up the §12 tension, don't oversell the match).</li>
+<li><strong>Jacobian vs S-transform</strong>: build deep nets at varying depth/init, plot empirical
+singular-value histogram against the S-transform prediction; show
+orthogonal+tuned-gain isometry vs Gaussian spreading.</li>
+<li><strong>Training drift</strong>: track a weight matrix's spectrum from Marchenko–Pastur at init
+toward heavier-tailed/spiked shapes during training.</li>
+</ul>
+<h3>12. Tensions and open questions</h3>
+<p>Don't oversell. Be explicit that empirical Hessians often <em>don't</em> show clean MP/
+Wishart bulks; discuss the Gaussian-equivalence caveats, <strong>heavy-tailed
+self-regularization</strong> (Martin &amp; Mahoney) as an alternative lens, and the gap between
+<span class="math">\(N\to\infty\)</span> free-probability idealizations and finite-width, correlated, post-training
+reality.</p>
+<hr />
+<h2>Resources</h2>
+<h3>Foundations of free probability (theory)</h3>
+<ul>
+<li>Voiculescu, Dykema &amp; Nica — <em>Free Random Variables</em> (1992): the founding monograph
+(R-transform, free convolution, asymptotic freeness).</li>
+<li>Nica &amp; Speicher — <em>Lectures on the Combinatorics of Free Probability</em> (2006): the
+standard graduate text; free cumulants &amp; non-crossing partitions.</li>
+<li>Mingo &amp; Speicher — <em>Free Probability and Random Matrices</em> (2017): the RMT-facing
+text, ideal for this post's angle.</li>
+<li>Tao, <em>Topics in Random Matrix Theory</em> — free-probability chapter (readable intro):
+<a href="https://terrytao.wordpress.com/tag/free-probability/">https://terrytao.wordpress.com/tag/free-probability/</a></li>
+<li>Voiculescu, <em>Limit laws for random matrices and free products</em> (1991) — the
+asymptotic-freeness theorem that licenses Haar-conjugation → freeness (cited by
+§3, §4, §9).</li>
+<li><strong>Free products &amp; free group factors</strong> (§4): Voiculescu, Dykema &amp; Nica cover the
+free-product construction; see also Voiculescu's <em>Symmetries of some reduced free
+product C\</em>-algebras* (1985) for the origin, and any survey of the still-open
+<span class="math">\(L(\mathbb{F}_n)\)</span> isomorphism problem.</li>
+<li><strong>Subordination</strong> (the analytic backbone of numerical free convolution): Biane,
+<em>Processes with free increments</em> (1998); Belinschi–Bercovici; Chistyakov–Götze.</li>
+<li>Survey on free convolution &amp; subordination (numerical difficulty / subordination
+functions): r-Free Convolution and Variance Function,
+<a href="https://www.mdpi.com/2075-1680/14/2/128">https://www.mdpi.com/2075-1680/14/2/128</a></li>
+</ul>
+<h3>Free probability ↔ deep learning (core papers)</h3>
+<ul>
+<li>Pennington &amp; Bahri, <em>Geometry of Neural Network Loss Surfaces via Random Matrix
+Theory</em>, ICML 2017 — Hessian = Wishart <span class="math">\(\boxplus\)</span> Wigner.
+<a href="https://proceedings.mlr.press/v70/pennington17a/pennington17a.pdf">https://proceedings.mlr.press/v70/pennington17a/pennington17a.pdf</a></li>
+<li>Pennington, Schoenholz &amp; Ganguli, <em>Resurrecting the Sigmoid in Deep Learning
+through Dynamical Isometry: Theory and Practice</em>, NeurIPS 2017 — S-transform for
+the Jacobian spectrum. <a href="https://arxiv.org/abs/1711.04735">https://arxiv.org/abs/1711.04735</a></li>
+<li>Pennington, Schoenholz &amp; Ganguli, <em>The Emergence of Spectral Universality in Deep
+Networks</em>, AISTATS 2018. <a href="https://arxiv.org/abs/1802.09979">https://arxiv.org/abs/1802.09979</a></li>
+<li>Pennington &amp; Worah, <em>Nonlinear Random Matrix Theory for Deep Learning</em>, NeurIPS
+2017 — deformed-MP spectrum of a single nonlinear Gram matrix (journal-extended
+version: <a href="https://arxiv.org/abs/1904.13063">https://arxiv.org/abs/1904.13063</a>).</li>
+<li>Fan &amp; Wang, <em>Spectra of the Conjugate Kernel and Neural Tangent Kernel for
+linear-width neural networks</em>, NeurIPS 2020. <a href="https://arxiv.org/abs/2005.11879">https://arxiv.org/abs/2005.11879</a></li>
+<li>Xiao et al., <em>Dynamical Isometry and a Mean Field Theory of CNNs: How to Train
+10,000-Layer Vanilla CNNs</em>, ICML 2018. (depth via isometry, applied)</li>
+<li>Tarnowski et al., <em>Dynamical Isometry is Achieved in Residual Networks in a
+Universal Way for any Activation Function</em>. <a href="https://arxiv.org/abs/1809.08848">https://arxiv.org/abs/1809.08848</a></li>
+<li>Pastur, <em>Appearance of Random Matrix Theory in Deep Learning</em> (2020 survey).
+<a href="https://arxiv.org/abs/2102.06740">https://arxiv.org/abs/2102.06740</a></li>
+<li>Murray, Granziol et al., <em>Universal characteristics of deep neural network loss
+surfaces from random matrix theory</em>. <a href="https://arxiv.org/abs/2205.08601">https://arxiv.org/abs/2205.08601</a></li>
+</ul>
+<h3>Loss-surface precursors (the energy–index / saddle picture of Bridge I)</h3>
+<ul>
+<li>Dauphin et al., <em>Identifying and attacking the saddle point problem in
+high-dimensional non-convex optimization</em>, NeurIPS 2014.</li>
+<li>Choromanska et al., <em>The Loss Surfaces of Multilayer Networks</em>, AISTATS 2015 —
+the spin-glass model that the energy–index story descends from.</li>
+<li>Baskerville, Keating et al. — universal spin-glass/RMT Hessian companion to
+Murray–Granziol above.</li>
+</ul>
+<h3>Alternative / complementary lens (heavy tails)</h3>
+<ul>
+<li>Martin &amp; Mahoney, <em>Implicit Self-Regularization in Deep Neural Networks: Evidence
+from Random Matrix Theory</em> (Heavy-Tailed Self-Regularization).</li>
+<li><code>weightwatcher</code> — open-source tool for HT-SR weight-spectrum diagnostics:
+<a href="https://github.com/CalculatedContent/WeightWatcher">https://github.com/CalculatedContent/WeightWatcher</a></li>
+</ul>
+<h3>Empirical / code</h3>
+<ul>
+<li><strong>PyHessian</strong> — Hessian eigenvalues, trace, and full spectral density (SLQ) for
+PyTorch nets. Paper: <a href="https://arxiv.org/abs/1912.07145">https://arxiv.org/abs/1912.07145</a> · Code:
+<a href="https://github.com/amirgholami/PyHessian">https://github.com/amirgholami/PyHessian</a></li>
+<li>Asymptotic-freeness &amp; free-convolution numerics: implement Cauchy-transform
+subordination in numpy/scipy (planned in §11; see Mingo–Speicher Ch. on
+computation and the subordination survey above).</li>
+<li><code>RMT4DL</code> / random-matrix demos and the loss-surface reproductions accompanying the
+Pennington papers (search the authors' code releases).</li>
+</ul>
+<hr />
+<h3>Notes / TODO before publishing</h3>
+<ul>
+<li>Decide depth/length: this could be one long post or a 2-part series (theory →
+empirical).</li>
+<li>Draw 2–3 inline SVG figures in the blog's watercolor style: (a) eigenbasis
+mixing under <span class="math">\(A+B\)</span>, (b) energy–index curve (Hessian), (c) S-transform/Jacobian
+isometry across depth.</li>
+<li>Pick 1 hero code demo to actually run and screenshot (likely the
+asymptotic-freeness histogram — cheap and visually convincing).</li>
+<li>Categories on publish: <code>[&quot;Research&quot;]</code> (maybe add a future &quot;Math / Theory&quot; section).</li>
+<li>Tags: <code>[&quot;Free Probability&quot;, &quot;Random Matrix Theory&quot;, &quot;Deep Learning Theory&quot;, &quot;Hessian&quot;]</code>.</li>
+</ul>
+</div></div>
+</article>
+<footer class="post-foot">Working draft — part of the RMT × Deep Learning series · built 2026-07-14</footer>
+
+</body></html>

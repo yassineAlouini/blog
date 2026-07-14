@@ -48,7 +48,7 @@ SECTION_BLURB = {
     "Computer Vision": "Segmentation, detection, and the metrics that score them.",
     "Video Processing": "Working with video — codecs, frames, and the preprocessing plumbing.",
     "NLP & LLMs": "Language models and how to train them efficiently.",
-    "Research": "Deeper dives and paper write-ups.",
+    "Research": "Deeper dives and paper write-ups — including work-in-progress drafts (WIP).",
 }
 # Public URL of the computer-vision book. Set to "#" to render "here" as plain
 # (un-linked) text until a public link is available.
@@ -66,6 +66,22 @@ MD_POSTS = [
          src="_static/lecun-world-models.md",
          source=("https://arxiv.org/abs/2603.19312", "▶ LeWorldModel on arXiv"),
          foot='Research digest compiled from arXiv and press sources · '),
+    dict(slug="rmt-deep-learning-series",
+         category="Research",
+         title="Random Matrices Meet Deep Learning — series roadmap",
+         subtitle="The plan for a multi-post series on the unexpected links between "
+                  "random matrix theory and deep learning.",
+         tags=["WIP", "Random Matrix Theory", "Deep Learning Theory", "Series"],
+         src="_static/rmt-deep-learning-series.md",
+         foot='Series roadmap (work in progress) · '),
+    dict(slug="free-probability-deep-learning",
+         category="Research",
+         title="Free Probability & Deep Learning (draft)",
+         subtitle="Free convolution, limiting spectra, and the Hessian / Jacobian / "
+                  "kernel bridges — Post 1 of the RMT × Deep Learning series.",
+         tags=["WIP", "Free Probability", "Random Matrix Theory", "Deep Learning Theory"],
+         src="_static/free-probability-deep-learning.md",
+         foot='Working draft — part of the RMT × Deep Learning series · '),
 ]
 
 class HighlightRenderer(mistune.HTMLRenderer):
@@ -144,8 +160,13 @@ def page_shell(title, head_extra, body, rel="../"):
 MATHJAX = """<script>window.MathJax={tex:{inlineMath:[['\\\\(','\\\\)']],displayMath:[['\\\\[','\\\\]']]},svg:{fontCache:'global'}};</script>
 <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>"""
 
+def tag_span(t):
+    # "WIP" gets a distinct badge class regardless of its position in the list.
+    cls = "tag tag--wip" if t.strip().lower() == "wip" else "tag"
+    return f'<span class="{cls}">{html.escape(t)}</span>'
+
 def write_post(slug, title, subtitle, tags, body_inner, source_html="", note_html="", foot_html=""):
-    tags_html = "".join(f'<span class="tag">{html.escape(t)}</span>' for t in tags)
+    tags_html = "".join(tag_span(t) for t in tags)
     body = f"""
 <a class="back" href="../index.html">← All posts</a>
 <article>
@@ -183,7 +204,7 @@ def build_md_post(p):
                source_html=src_html, foot_html=p.get("foot", ""))
 
 def card(title, subtitle, tags, href, external=False):
-    chips = "".join(f'<span class="tag">{html.escape(t)}</span>' for t in tags)
+    chips = "".join(tag_span(t) for t in tags)
     ext = '<span class="ext">↗ external</span>' if external else ""
     return f"""<a class="card" href="{href}"{' target="_blank" rel="noopener"' if external else ''}>
   <div class="tags">{chips}{ext}</div>
