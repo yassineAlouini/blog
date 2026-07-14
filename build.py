@@ -43,13 +43,12 @@ KAGGLE_USER = "yassinealouini"
 
 # Section order + one-line blurbs for the landing page. Sections with no posts
 # are skipped automatically.
-SECTION_ORDER = ["Computer Vision", "Video Processing", "NLP & LLMs", "Research", "R&D"]
+SECTION_ORDER = ["Computer Vision", "Video Processing", "NLP & LLMs", "Research"]
 SECTION_BLURB = {
     "Computer Vision": "Segmentation, detection, and the metrics that score them.",
     "Video Processing": "Working with video — codecs, frames, and the preprocessing plumbing.",
     "NLP & LLMs": "Language models and how to train them efficiently.",
-    "Research": "Deeper dives and paper write-ups.",
-    "R&D": "Work in progress — research notes, drafts, and the code that goes with them.",
+    "Research": "Deeper dives and paper write-ups — including work-in-progress drafts (WIP).",
 }
 # Public URL of the computer-vision book. Set to "#" to render "here" as plain
 # (un-linked) text until a public link is available.
@@ -68,7 +67,7 @@ MD_POSTS = [
          source=("https://arxiv.org/abs/2603.19312", "▶ LeWorldModel on arXiv"),
          foot='Research digest compiled from arXiv and press sources · '),
     dict(slug="rmt-deep-learning-series",
-         category="R&D",
+         category="Research",
          title="Random Matrices Meet Deep Learning — series roadmap",
          subtitle="The plan for a multi-post series on the unexpected links between "
                   "random matrix theory and deep learning.",
@@ -76,7 +75,7 @@ MD_POSTS = [
          src="_static/rmt-deep-learning-series.md",
          foot='Series roadmap (work in progress) · '),
     dict(slug="free-probability-deep-learning",
-         category="R&D",
+         category="Research",
          title="Free Probability & Deep Learning (draft)",
          subtitle="Free convolution, limiting spectra, and the Hessian / Jacobian / "
                   "kernel bridges — Post 1 of the RMT × Deep Learning series.",
