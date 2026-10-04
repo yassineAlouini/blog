@@ -1,8 +1,8 @@
 # `rmtdl` — runnable companion code for *Random Matrices Meet Deep Learning*
 
-Small, dependency-light (numpy / scipy / matplotlib) code so readers can **run
+Small, dependency-light (numpy / matplotlib) code so readers can **run
 each example and watch the RMT ↔ deep-learning connections appear**. Every figure
-is styled to match the blog's watercolor theme.
+uses a shared watercolor palette.
 
 ## Setup
 

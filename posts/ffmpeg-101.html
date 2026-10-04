@@ -2,22 +2,25 @@
 <html lang="en"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>FFmpeg 101</title>
+<meta name="description" content="Practical FFmpeg recipes for video and audio preprocessing in ML pipelines.">
 <link rel="stylesheet" href="../assets/style.css">
 <link rel="stylesheet" href="../assets/pygments.css">
 <script>window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']]},svg:{fontCache:'global'}};</script>
 <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
 </head><body>
+<a class="skip-link" href="#main-content">Skip to content</a>
 
 <a class="back" href="../index.html">← All posts</a>
+<main id="main-content" tabindex="-1">
 <article>
   <header class="post-head">
     <div class="tags"><span class="tag">FFmpeg</span><span class="tag">Video</span><span class="tag">Tooling</span></div>
     <h1>FFmpeg 101</h1>
     <p class="subtitle">Practical FFmpeg recipes for video and audio preprocessing in ML pipelines.</p>
-    <p class="kaggle-link"><a href="https://www.kaggle.com/code/yassinealouini/ffmpeg-101" target="_blank" rel="noopener">▶ View original on Kaggle</a></p>
+    <p class="source-link"><a href="https://www.kaggle.com/code/yassinealouini/ffmpeg-101" target="_blank" rel="noopener">▶ View original on Kaggle</a></p>
   </header>
   <div class="note">Ported from the Kaggle notebook source (narrative + code). Cell outputs are not re-executed here — run it on Kaggle for live results.</div>
-  <div class="nb"><div class="md"><h1>Preamble</h1>
+  <div class="nb"><div class="md"><h2>Preamble</h2>
 </div>
 <div class="md"><p>I have tried to use <code>torchcodec</code> (a codec library that has good PyTorch API etc) at the end of this notebook but failed due to
 env issues. If I manage to succeed later, I will add a section.</p>
@@ -25,12 +28,12 @@ env issues. If I manage to succeed later, I will add a section.</p>
 <p><code>!pip install torchcodec --index-url=https://download.pytorch.org/whl/cu126</code></p>
 <p>Or checking the <a href="https://github.com/pytorch/torchcodec">repo</a>.</p>
 </div>
-<div class="md"><h1>Introduction</h1>
+<div class="md"><h2>Introduction</h2>
 <p>I have been using ffmpeg over the last 5 years (or so) and much more recently (due to my new professional activities).</p>
 <p>In this guide, we will explore some of the <strong>core concepts</strong>  of this great piece of software work, with some detailed exemples.</p>
 <p>Let's get started!</p>
 </div>
-<div class="md"><h2>What is ffmpeg?</h2>
+<div class="md"><h3>What is ffmpeg?</h3>
 </div>
 <div class="md"><p><img src="https://upload.wikimedia.org/wikipedia/commons/5/5f/FFmpeg_Logo_new.svg" alt="logo" /></p>
 </div>
@@ -74,7 +77,7 @@ env issues. If I manage to succeed later, I will add a section.</p>
 <div class="md"><p>Great, now that we know a bit more about ffmpeg, let's some adjacent core concepts before moving to some
 common commands.</p>
 </div>
-<div class="md"><h2>What is really a video?</h2>
+<div class="md"><h3>What is really a video?</h3>
 </div>
 <div class="md"><p>You might be wondering what a video could be? A video is a collection of the following elements:</p>
 <ul>
@@ -109,7 +112,7 @@ Audio: AAC encoded audio stream
 Additional metadata like title, creation date, etc.</p>
 <p>The playback software needs to understand both the container format and the specific codecs used to properly decode and play the video.</p>
 </div>
-<div class="md"><h2>About codecs</h2>
+<div class="md"><h3>About codecs</h3>
 </div>
 <div class="md"><p>A (video) <a href="https://en.wikipedia.org/wiki/Video_codec">codec</a> is short for compressor-decompressor. It is used to transform a raw video into a more mangeable format. Most often this transformation is lossy, i.e. some of the details of the original raw video are lost.</p>
 <p>Some of the popular codecs are:</p>
@@ -151,7 +154,7 @@ Additional metadata like title, creation date, etc.</p>
 <div class="md"><p>Let's have a detour and explore a bit the concept of <a href="https://en.wikipedia.org/wiki/Video_compression_picture_types">video compression picture types</a>. For that, we have used again Claude Sonnet and adapted the summary below:</p>
 </div>
 <div class="md"><p>Video compression relies on different frame types (also called picture types) to efficiently reduce file size while maintaining quality. Here's a detailed look at the key frame types used in modern video codecs:</p>
-<h2>I-Frames (Intra-coded frames)</h2>
+<h3>I-Frames (Intra-coded frames)</h3>
 <ul>
 <li>Complete, standalone images similar to JPEG photos</li>
 <li>Don't depend on data from other frames</li>
@@ -161,7 +164,7 @@ Additional metadata like title, creation date, etc.</p>
 <li>Typically appear at scene changes or at regular intervals (e.g., every 12-24 frames)</li>
 <li>Essential for seeking/scrubbing through video</li>
 </ul>
-<h2>P-Frames (Predicted frames)</h2>
+<h3>P-Frames (Predicted frames)</h3>
 <ul>
 <li>Store only the differences (delta) from previous I-frames or P-frames</li>
 <li>Use motion compensation to predict where elements moved from the reference frame</li>
@@ -169,7 +172,7 @@ Additional metadata like title, creation date, etc.</p>
 <li>Form a dependency chain (require preceding reference frames to be decoded)</li>
 <li>Quality gradually decreases as you move further from an I-frame</li>
 </ul>
-<h2>B-Frames (Bi-directional predicted frames)</h2>
+<h3>B-Frames (Bi-directional predicted frames)</h3>
 <ul>
 <li>Reference both previous AND future frames to predict content</li>
 <li>Most storage-efficient frame type (often 10-20% of an I-frame's size)</li>
@@ -184,7 +187,7 @@ Additional metadata like title, creation date, etc.</p>
 </div>
 <div class="md"><p>IPBBPBBPBB: this is one possible GOP</p>
 </div>
-<div class="md"><h2>About containers</h2>
+<div class="md"><h3>About containers</h3>
 </div>
 <div class="md"><p>A <a href="https://en.wikipedia.org/wiki/Container_format">container</a> is a file format that contains different data streams (i.e. think about it as a box that contains things):</p>
 <ul>
@@ -200,7 +203,7 @@ Notice that the different streams could be each encoded using a different codec:
 <div class="md"><p>Thus, a <strong>container</strong> and a <strong>codec</strong> make a video format.</p>
 <p>Let's explore the <code>.mp4</code> video format as an example.</p>
 </div>
-<div class="md"><h2>MP4</h2>
+<div class="md"><h3>MP4</h3>
 </div>
 <div class="md"><p>MP4, short for <strong>MPEG4 part 14</strong>, is a very popular video format.</p>
 <p>As we have seen above, it is a combination of a codec (compressor-decoder) and a container:</p>
@@ -209,7 +212,7 @@ Notice that the different streams could be each encoded using a different codec:
 <li>container: it is .mp4 file format</li>
 </ol>
 </div>
-<div class="md"><h2>Extracting metadata</h2>
+<div class="md"><h3>Extracting metadata</h3>
 </div>
 <div class="md"><p>One common task that ffmpeg is used for is to extract metadata from the video to analyze.
 For that, there is a handy CLI tool: <strong>ffprobe</strong></p>
@@ -255,7 +258,7 @@ For that, there is a handy CLI tool: <strong>ffprobe</strong></p>
 <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;width: &quot;</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">height: &quot;</span><span class="p">,</span> <span class="n">height</span><span class="p">,</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">fps: &quot;</span><span class="p">,</span> <span class="n">fps</span><span class="p">)</span>
 </code></pre>
 </div>
-<div class="md"><h2>Extracting frames</h2>
+<div class="md"><h3>Extracting frames</h3>
 </div>
 <div class="md"><p>Let's extract frames using numpy and the ffmpeg wrapper</p>
 </div>
@@ -320,7 +323,7 @@ For that, there is a handy CLI tool: <strong>ffprobe</strong></p>
     <span class="n">display</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
 </code></pre>
 </div>
-<div class="md"><h2>Extracting audio</h2>
+<div class="md"><h3>Extracting audio</h3>
 </div>
 <div class="md"><p>Let's give another example of extracting the audio stream using the ffmpeg wrapper as well.
 We will encode the audio as an mp3 since it is a very popular choice.</p>
@@ -354,7 +357,7 @@ We will encode the audio as an mp3 since it is a very popular choice.</p>
 <div class="code-cell"><pre class="highlight"><code><span class="n">extract_and_play_audio_mp3</span><span class="p">(</span><span class="n">video_path</span><span class="p">)</span>
 </code></pre>
 </div>
-<div class="md"><h2>From a video to tensors on GPU</h2>
+<div class="md"><h3>From a video to tensors on GPU</h3>
 </div>
 <div class="md"><p>We will try to get a video decoded directly on the GPU as tensors and then
 save it back as a video using GPU supported encoder.</p>
@@ -598,11 +601,12 @@ remux the output of the process function (i.e. move from one container to anothe
 <div class="md"><p>Now the <code>output.mp4</code> can be displayed (even though there is some &quot;jittering&quot;, need more exploration to
 understand the root cause, maybe it is already in the original video, need to try on other videos).</p>
 </div>
-<div class="md"><h1>Conclusion</h1>
+<div class="md"><h2>Conclusion</h2>
 </div>
 <div class="md"><p>That's it for this introduciton to ffmpeg, I hope you have learned something out of it.</p>
 </div></div>
 </article>
-<footer class="post-foot">Ported from <a href="https://www.kaggle.com/code/yassinealouini/ffmpeg-101">kaggle.com/code/yassinealouini/ffmpeg-101</a> · built 2026-07-14</footer>
+</main>
+<footer class="post-foot">Ported from <a href="https://www.kaggle.com/code/yassinealouini/ffmpeg-101">kaggle.com/code/yassinealouini/ffmpeg-101</a> · built 2026-10-04</footer>
 
 </body></html>

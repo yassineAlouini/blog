@@ -1,5 +1,4 @@
-"""Shared 'watercolor' matplotlib style so every figure in the series looks like
-one family (matches the blog's Aegean / clay palette)."""
+"""Shared watercolor matplotlib style for figures in the series."""
 
 from __future__ import annotations
 

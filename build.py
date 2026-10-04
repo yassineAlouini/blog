@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """Build the static blog: convert Kaggle notebooks -> branded HTML + landing index."""
-import json, re, html, pathlib, datetime
+import datetime
+import html
+import json
+import pathlib
 
 import mistune
 from pygments import highlight
@@ -12,7 +15,6 @@ ROOT = pathlib.Path(__file__).parent
 SRC  = ROOT / "_src"
 POSTS_DIR = ROOT / "posts"
 ASSETS = ROOT / "assets"
-POSTS_DIR.mkdir(exist_ok=True); ASSETS.mkdir(exist_ok=True)
 
 # ---------------------------------------------------------------- post registry
 POSTS = [
@@ -86,6 +88,10 @@ MD_POSTS = [
 
 class HighlightRenderer(mistune.HTMLRenderer):
     """Render fenced/indented markdown code blocks with Pygments, matching code cells."""
+    def heading(self, text, level, **attrs):
+        # The page title owns h1; article headings start at h2.
+        return super().heading(text, min(level + 1, 6), **attrs)
+
     def block_code(self, code, info=None):
         lang = info.strip().split(None, 1)[0].lower() if info else ""
         try:
@@ -124,7 +130,7 @@ def render_code_cell(cell) -> str:
         data = out.get("data", {})
         if "image/png" in data:
             b64 = data["image/png"];  b64 = b64 if isinstance(b64, str) else "".join(b64)
-            parts.append(f'<div class="out"><img src="data:image/png;base64,{b64}"></div>')
+            parts.append(f'<div class="out"><img src="data:image/png;base64,{b64}" alt="Notebook cell output" loading="lazy"></div>')
         elif "text/html" in data:
             parts.append(f'<div class="out">{"".join(data["text/html"])}</div>')
         elif "text/plain" in data:
@@ -145,15 +151,17 @@ def notebook_body(nb_path: pathlib.Path) -> str:
     return "\n".join(c for c in chunks if c)
 
 # ---------------------------------------------------------------- HTML shells
-def page_shell(title, head_extra, body, rel="../"):
+def page_shell(title, head_extra, body, rel="../", description=""):
     return f"""<!DOCTYPE html>
 <html lang="en"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>{html.escape(title)}</title>
+<meta name="description" content="{html.escape(description)}">
 <link rel="stylesheet" href="{rel}assets/style.css">
 <link rel="stylesheet" href="{rel}assets/pygments.css">
 {head_extra}
 </head><body>
+<a class="skip-link" href="#main-content">Skip to content</a>
 {body}
 </body></html>"""
 
@@ -169,6 +177,7 @@ def write_post(slug, title, subtitle, tags, body_inner, source_html="", note_htm
     tags_html = "".join(tag_span(t) for t in tags)
     body = f"""
 <a class="back" href="../index.html">← All posts</a>
+<main id="main-content" tabindex="-1">
 <article>
   <header class="post-head">
     <div class="tags">{tags_html}</div>
@@ -179,9 +188,10 @@ def write_post(slug, title, subtitle, tags, body_inner, source_html="", note_htm
   {note_html}
   <div class="nb">{body_inner}</div>
 </article>
+</main>
 <footer class="post-foot">{foot_html}built {datetime.date.today().isoformat()}</footer>
 """
-    out = page_shell(title, MATHJAX, body, rel="../")
+    out = page_shell(title, MATHJAX, body, rel="../", description=subtitle)
     (POSTS_DIR / f"{slug}.html").write_text(out)
     print("post  ->", POSTS_DIR / f"{slug}.html", f"({len(out)//1024}KB)")
 
@@ -189,7 +199,7 @@ def build_post(p):
     body_inner = notebook_body(SRC / p["slug"] / f"{p['slug']}.ipynb")
     kaggle = f"https://www.kaggle.com/code/{KAGGLE_USER}/{p['slug']}"
     write_post(p["slug"], p["title"], p["subtitle"], p["tags"], body_inner,
-               source_html=f'<p class="kaggle-link"><a href="{kaggle}" target="_blank" rel="noopener">▶ View original on Kaggle</a></p>',
+               source_html=f'<p class="source-link"><a href="{kaggle}" target="_blank" rel="noopener">▶ View original on Kaggle</a></p>',
                note_html='<div class="note">Ported from the Kaggle notebook source (narrative + code). '
                          'Cell outputs are not re-executed here — run it on Kaggle for live results.</div>',
                foot_html=f'Ported from <a href="{kaggle}">kaggle.com/code/{KAGGLE_USER}/{p["slug"]}</a> · ')
@@ -199,15 +209,14 @@ def build_md_post(p):
     src_html = ""
     if p.get("source"):
         url, label = p["source"]
-        src_html = f'<p class="kaggle-link"><a href="{url}" target="_blank" rel="noopener">{label}</a></p>'
+        src_html = f'<p class="source-link"><a href="{html.escape(url)}" target="_blank" rel="noopener">{html.escape(label)}</a></p>'
     write_post(p["slug"], p["title"], p["subtitle"], p["tags"], body_inner,
                source_html=src_html, foot_html=p.get("foot", ""))
 
-def card(title, subtitle, tags, href, external=False):
+def card(title, subtitle, tags, href):
     chips = "".join(tag_span(t) for t in tags)
-    ext = '<span class="ext">↗ external</span>' if external else ""
-    return f"""<a class="card" href="{href}"{' target="_blank" rel="noopener"' if external else ''}>
-  <div class="tags">{chips}{ext}</div>
+    return f"""<a class="card" href="{html.escape(href)}">
+  <div class="tags">{chips}</div>
   <h3>{html.escape(title)}</h3>
   <p>{html.escape(subtitle)}</p>
 </a>"""
@@ -222,39 +231,46 @@ def build_index():
         return c if isinstance(c, list) else [c]
     # group into ordered sections (skip empty ones)
     sections = ""
-    for sec in SECTION_ORDER:
+    topic_links = []
+    categories = dict.fromkeys(SECTION_ORDER + [cat for it in items for cat in cats(it)])
+    for index, sec in enumerate(categories):
         sec_items = [it for it in items if sec in cats(it)]
         if not sec_items:
             continue
         cards = "".join(card(it["title"], it["subtitle"], it["tags"], it["href"])
                         for it in sec_items)
         blurb = SECTION_BLURB.get(sec, "")
-        sections += (f'<section class="section">\n'
-                     f'  <h2 class="section-title">{html.escape(sec)}</h2>\n'
+        section_id = f"topic-{index + 1}"
+        topic_links.append(f'<a href="#{section_id}">{html.escape(sec)}</a>')
+        sections += (f'<section class="section" aria-labelledby="{section_id}">\n'
+                     f'  <h2 class="section-title" id="{section_id}">{html.escape(sec)}</h2>\n'
                      + (f'  <p class="section-desc">{html.escape(blurb)}</p>\n' if blurb else "")
                      + f'  <div class="grid">{cards}</div>\n</section>\n')
     book = "here" if BOOK_URL == "#" else f'<a href="{BOOK_URL}">here</a>'
     book_cta = "" if BOOK_URL == "#" else (
         f'<a class="book-cta" href="{BOOK_URL}" target="_blank" rel="noopener">'
-        f'📘 Get the book <span class="arr">→</span></a>')
+        '📘 Get the book <span aria-hidden="true">→</span></a>')
     body = f"""
 <header class="hero">
   <div class="hero-inner">
-    <div class="eyebrow">Yassine Alouini · Notebooks &amp; Research</div>
+    <div class="eyebrow">Yassine Alouini</div>
+    <h1>Notebooks &amp; Research</h1>
     <p class="lede">I am a <strong>computer vision expert</strong> — at least on the subset of
     deep-learning image applications. I have written a computer vision book; you can get it {book}.</p>
     <p class="lede bio">Focusing now on some <strong>multi-modal applications</strong>
     (video, text and images, …) and on <strong>LLMs for specific tasks</strong>
     (coding, mathematical reasoning, …).</p>
     {book_cta}
+    <nav class="topic-nav" aria-label="Browse by topic">{"".join(topic_links)}</nav>
   </div>
 </header>
-<main class="grid-wrap">
+<main class="grid-wrap" id="main-content" tabindex="-1">
 {sections}</main>
-<footer class="site-foot">Built with Claude Code · {datetime.date.today().isoformat()} ·
+<footer class="site-foot">Website generated with assistance from AI agents · {datetime.date.today().isoformat()} ·
 sources on <a href="https://www.kaggle.com/{KAGGLE_USER}/code">Kaggle</a></footer>
 """
-    out = page_shell("Yassine Alouini — Notebooks & Research", "", body, rel="")
+    out = page_shell("Yassine Alouini — Notebooks & Research", "", body, rel="",
+                     description="Notebooks and research by Yassine Alouini on computer vision, video, language models, and deep learning theory.")
     (ROOT / "index.html").write_text(out)
     print("index ->", ROOT / "index.html")
 
@@ -263,6 +279,8 @@ def write_assets():
     print("assets-> pygments.css")
 
 if __name__ == "__main__":
+    POSTS_DIR.mkdir(exist_ok=True)
+    ASSETS.mkdir(exist_ok=True)
     write_assets()
     for p in POSTS:
         build_post(p)
