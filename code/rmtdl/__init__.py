@@ -1,7 +1,7 @@
 """rmtdl — a tiny Random Matrix Theory toolkit for the *Random Matrices Meet
 Deep Learning* blog series.
 
-Everything is plain numpy/scipy so readers can run each example and *see* the
+Everything is plain numpy/matplotlib so readers can run each example and *see* the
 RMT <-> deep-learning connections for themselves.
 
 Modules

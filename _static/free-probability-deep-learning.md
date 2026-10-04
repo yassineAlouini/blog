@@ -118,8 +118,8 @@ independent" tangible.
 The construction that *realizes* freeness. Classical probability models
 independence with the **tensor product** of spaces; free probability models
 freeness with the **free product**. Given non-commutative probability spaces
-$(\mathcal{A}_i, \tau_i)$, their free product $(\mathcal{A}, \tau) = \ast_i
-(\mathcal{A}_i, \tau_i)$ is the algebra they generate with the free relation baked
+$(\mathcal{A}_i, \tau_i)$, their free product $(\mathcal{A}, \tau) = \ast_i (\mathcal{A}_i, \tau_i)$
+is the algebra they generate with the free relation baked
 in — the canonical copies of the $\mathcal{A}_i$ sitting inside are automatically
 free. So "freeness" is not just an abstract rule on traces (§3); the free product
 is the concrete *home* where free random variables actually live (realized on the
@@ -134,8 +134,8 @@ Two threads to pull, one historical and one that we need downstream:
   product of their algebras, and freeness is exactly the structure the free
   generators exhibit. (The problem is still open — a great "this math is alive"
   aside.)
-- **Operational.** The free product is *where free convolution happens*: $\mu
-  \boxplus \nu$ and $\mu \boxtimes \nu$ (§6) are defined as the distributions of
+- **Operational.** The free product is *where free convolution happens*:
+  $\mu \boxplus \nu$ and $\mu \boxtimes \nu$ (§6) are defined as the distributions of
   $a+b$ and $ab$ when $a,b$ are the canonical free copies of variables with laws
   $\mu,\nu$ living in the free product. (Under the trace, $ab$ has the same
   spectral law as the self-adjoint $\sqrt{a}\,b\,\sqrt{a}$ that §6 uses — same
@@ -162,8 +162,8 @@ Box: "R-transform : freeness :: log-characteristic function : classical
 independence."
 
 ### 6. Free convolution
-Define $\mu \boxplus \nu$ (spectrum of $A+B$ for free $A,B$) via $R_{\mu\boxplus\nu} =
-R_\mu + R_\nu$, and $\mu \boxtimes \nu$ (spectrum of $\sqrt{A}\,B\,\sqrt{A}$) via
+Define $\mu \boxplus \nu$ (spectrum of $A+B$ for free $A,B$) via
+$R_{\mu\boxplus\nu} = R_\mu + R_\nu$, and $\mu \boxtimes \nu$ (spectrum of $\sqrt{A}\,B\,\sqrt{A}$) via
 $S_{\mu\boxtimes\nu} = S_\mu \cdot S_\nu$. Be honest that closed forms are rare:
 inverting $G$ is hard, so practitioners use **subordination functions** and
 fixed-point iteration. Set up the code in §11.2.

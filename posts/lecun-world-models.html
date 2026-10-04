@@ -2,19 +2,22 @@
 <html lang="en"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>LeCun&#x27;s World Models: JEPA, LeJEPA &amp; LeWorldModel</title>
+<meta name="description" content="A technical walkthrough of the JEPA world-model line — the maths, a PyTorch reconstruction, and the AMI Labs startup.">
 <link rel="stylesheet" href="../assets/style.css">
 <link rel="stylesheet" href="../assets/pygments.css">
 <script>window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']]},svg:{fontCache:'global'}};</script>
 <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
 </head><body>
+<a class="skip-link" href="#main-content">Skip to content</a>
 
 <a class="back" href="../index.html">← All posts</a>
+<main id="main-content" tabindex="-1">
 <article>
   <header class="post-head">
     <div class="tags"><span class="tag">World Models</span><span class="tag">JEPA</span><span class="tag">Research</span></div>
     <h1>LeCun&#x27;s World Models: JEPA, LeJEPA &amp; LeWorldModel</h1>
     <p class="subtitle">A technical walkthrough of the JEPA world-model line — the maths, a PyTorch reconstruction, and the AMI Labs startup.</p>
-    <p class="kaggle-link"><a href="https://arxiv.org/abs/2603.19312" target="_blank" rel="noopener">▶ LeWorldModel on arXiv</a></p>
+    <p class="source-link"><a href="https://arxiv.org/abs/2603.19312" target="_blank" rel="noopener">▶ LeWorldModel on arXiv</a></p>
   </header>
   
   <div class="nb"><div class="md"><p>There are <strong>three distinct but tightly linked artifacts</strong> people lump together as &quot;LeCun's world model&quot;:</p>
@@ -24,7 +27,7 @@
 <li><strong>&quot;When Does LeJEPA Learn a World Model?&quot;</strong> (May 2026, <a href="https://arxiv.org/html/2605.26379v1">arXiv 2605.26379</a>) — the identifiability theory proving <em>when</em> the recovered latents are the true ones.</li>
 </ul>
 <p>These come out of LeCun's research circle around his post-Meta startup, <strong>AMI Labs (Advanced Machine Intelligence)</strong>.</p>
-<h2>Why a world model, not an LLM</h2>
+<h3>Why a world model, not an LLM</h3>
 <p>LeCun's thesis (from his 2022 position paper <em>&quot;A Path Towards Autonomous Machine Intelligence&quot;</em>) is that intelligence requires an internal <strong>world model</strong>: a function that predicts how the world evolves, especially as a consequence of actions, so an agent can <em>plan</em> by simulating futures rather than reacting token-by-token.</p>
 <p>The central design choice is <strong>where you predict</strong>:</p>
 <ul>
@@ -32,7 +35,7 @@
 <li><strong>JEPA (Joint Embedding Predictive Architecture)</strong> predicts in a <em>learned latent space</em>. Encode observations to abstract embeddings and predict the <em>embedding</em> of the future, discarding what is unpredictable.</li>
 </ul>
 <p>That single move — predict in latent space, not pixel space — is the whole conceptual backbone.</p>
-<h2>JEPA &amp; the collapse problem</h2>
+<h3>JEPA &amp; the collapse problem</h3>
 <p>Given two views of a signal (a context <span class="math">\(x\)</span> and a target <span class="math">\(y\)</span> — two crops, or observation-at-<span class="math">\(t\)</span> and observation-at-<span class="math">\(t{+}1\)</span>): an encoder <span class="math">\(f_\theta\)</span> maps each to embeddings <span class="math">\(s_x = f_\theta(x)\)</span>, <span class="math">\(s_y = f_\theta(y)\)</span>; a predictor <span class="math">\(g_\phi\)</span> predicts the target embedding from the context, optionally conditioned on an action <span class="math">\(a\)</span>: <span class="math">\(\hat s_y = g_\phi(s_x, a)\)</span>; and an <strong>energy</strong> measures incompatibility: <span class="math">\(E(x,y) = \lVert \hat s_y - s_y \rVert^2\)</span>.</p>
 <div class="figure">
 <svg viewBox="0 0 760 320" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="JEPA / LeWorldModel data flow">
@@ -113,7 +116,7 @@
 </tbody>
 </table>
 <p>All of these are <em>heuristic</em>. LeCun's 2025–26 line removes the heuristics and replaces them with a single principled regularizer.</p>
-<h2>LeJEPA: making it provable</h2>
+<h3>LeJEPA: making it provable</h3>
 <p>Key theoretical claim: <strong>the isotropic Gaussian is the unique embedding distribution that minimizes worst-case downstream prediction risk.</strong> If you don't know the downstream task, the optimal thing your embeddings can do is be distributed as <span class="math">\(\mathcal N(0, I)\)</span> — maximally spread, no privileged directions, no collapse.</p>
 <p>So instead of <em>ad hoc</em> variance/covariance terms, you directly regularize toward isotropic Gaussian via <strong>SIGReg (Sketched Isotropic Gaussian Regularization)</strong>: draw random unit directions and project embeddings onto each (a distribution is isotropic Gaussian iff every 1-D projection is standard Gaussian — Cramér–Wold); then test each projection against <span class="math">\(\mathcal N(0,1)\)</span> with a characteristic-function goodness-of-fit statistic (Epps–Pulley):</p>
 <div class="eq">\[ \text{SIGReg} = \mathbb{E}_{u\sim \mathbb S^{D-1}} \int \big|\, \hat\varphi_u(t) - e^{-t^2/2} \,\big|^2 \, w(t)\,dt \]</div>
@@ -143,7 +146,7 @@
     <span class="n">ts</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.05</span><span class="p">,</span> <span class="n">t_max</span><span class="p">,</span> <span class="n">n_freq</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">Z</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
     <span class="n">w</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">ts</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>                    <span class="c1"># Gaussian frequency weighting</span>
     <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">epps_pulley_1d</span><span class="p">(</span><span class="n">P</span><span class="p">[:,</span> <span class="n">k</span><span class="p">],</span> <span class="n">ts</span><span class="p">,</span> <span class="n">w</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_dirs</span><span class="p">)])</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
-</code></pre></div><h2>LeWorldModel — the actual world model</h2>
+</code></pre></div><h3>LeWorldModel — the actual world model</h3>
 <p>Authors: <strong>Lucas Maes, Quentin Le Lidec, Damien Scieur, Yann LeCun, Randall Balestriero</strong> (Mila / NYU / Samsung SAIL / Brown). It is the <strong>first JEPA world model that trains stably end-to-end from raw pixels</strong> with only <strong>two loss terms</strong> — applying the LeJEPA insight to action-conditioned dynamics.</p>
 <ul>
 <li><strong>Encoder</strong> <span class="math">\(z_t = \mathrm{enc}(o_t)\)</span> — maps a pixel frame to a <strong>single ~192-dim token</strong> (≈200× fewer than DINO-WM's patch tokens).</li>
@@ -171,7 +174,7 @@
         <span class="n">mu</span><span class="p">,</span> <span class="n">std</span> <span class="o">=</span> <span class="n">A</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="n">A</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="mf">1e-4</span>    <span class="c1"># refit sampling dist</span>
     <span class="k">return</span> <span class="n">mu</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>                                          <span class="c1"># execute first action, replan</span>
 </code></pre></div><p>Same family as <strong>PlaNet / Dreamer</strong> MPC-over-imagination, but the dynamics live in a non-generative, SIGReg-regularized latent rather than a reconstructive RSSM.</p>
-<h2>When does it learn a world model?</h2>
+<h3>When does it learn a world model?</h3>
 <p>The theory paper (arXiv 2605.26379) answers <em>when the recovered latents are the true hidden variables</em> (identifiability):</p>
 <ul>
 <li><strong>Theorem 5.1 (Linear Identifiability).</strong> Under a Gaussian world model, LeJEPA recovers the true latents <strong>up to an orthogonal rotation</strong> <span class="math">\(Q\)</span>; the alignment loss obeys <span class="math">\(\mathcal L(h) \ge 2(1-\rho)n\)</span>, with equality iff <span class="math">\(h(z) = Qz\)</span>.</li>
@@ -182,7 +185,7 @@
 <blockquote>
 <p><strong>Honest limitation:</strong> the guarantees hold under Gaussian latents + OU dynamics + good exploration, and only for the <strong>encoder</strong> — not the action-conditioned predictor. So &quot;LeWM provably learns the true world model&quot; is <strong>not</strong> yet established; the dynamics side remains empirical.</p>
 </blockquote>
-<h2>Relation to other work</h2>
+<h3>Relation to other work</h3>
 <p>Direct ancestry (LeCun's own line): I-JEPA → V-JEPA / V-JEPA 2 → LeJEPA → LeWorldModel — &quot;remove every heuristic.&quot;</p>
 <table>
 <thead>
@@ -215,9 +218,9 @@
 </tbody>
 </table>
 <p>The unifying contrast: <strong>predict-in-latent + distributional regularizer (LeCun camp)</strong> vs. <strong>predict-in-observation-space / generative (LLM + video-diffusion camp)</strong>.</p>
-<h2>The AMI startup</h2>
+<h3>The AMI startup</h3>
 <p><strong>AMI Labs (Advanced Machine Intelligence)</strong>, founded by LeCun after leaving Meta, raised a <strong>~$1.03B seed round</strong> (announced ~March 2026) — among the largest AI seed rounds ever, on an explicit thesis: build <strong>world models</strong>, a contrarian bet <em>against</em> LLMs as the path to human-level intelligence. Critical coverage stresses that the funding-round framing oversells novelty — the theory only guarantees encoder-side recovery under idealized assumptions, and the world-model dynamics side remains empirical.</p>
-<h2>Sources</h2>
+<h3>Sources</h3>
 <ul>
 <li><a href="https://arxiv.org/abs/2603.19312">LeWorldModel — arXiv 2603.19312</a> · <a href="https://le-wm.github.io/">project page</a></li>
 <li><a href="https://arxiv.org/abs/2511.08544">LeJEPA — arXiv 2511.08544</a> · <a href="https://github.com/rbalestr-lab/lejepa">code (rbalestr-lab/lejepa)</a></li>
@@ -226,6 +229,7 @@
 </ul>
 </div></div>
 </article>
-<footer class="post-foot">Research digest compiled from arXiv and press sources · built 2026-07-14</footer>
+</main>
+<footer class="post-foot">Research digest compiled from arXiv and press sources · built 2026-10-04</footer>
 
 </body></html>
