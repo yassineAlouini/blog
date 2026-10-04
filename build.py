@@ -259,7 +259,7 @@ sources on <a href="https://www.kaggle.com/{KAGGLE_USER}/code">Kaggle</a></foote
     print("index ->", ROOT / "index.html")
 
 def write_assets():
-    (ASSETS / "pygments.css").write_text(HtmlFormatter(style="friendly").get_style_defs(".highlight"))
+    (ASSETS / "pygments.css").write_text(HtmlFormatter(style="bw").get_style_defs(".highlight"))
     print("assets-> pygments.css")
 
 if __name__ == "__main__":
