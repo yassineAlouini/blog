@@ -52,6 +52,12 @@ SECTION_BLURB = {
     "NLP & LLMs": "Language models and how to train them efficiently.",
     "Research": "Deeper dives and paper write-ups — including work-in-progress drafts (WIP).",
 }
+SECTION_ICONS = {
+    "Computer Vision": "vision",
+    "Video Processing": "video",
+    "NLP & LLMs": "language",
+    "Research": "research",
+}
 # Public URL of the computer-vision book. Set to "#" to render "here" as plain
 # (un-linked) text until a public link is available.
 BOOK_URL = "https://alouinimohamedyass.gumroad.com/l/computer_vision_with_pytorch"
@@ -241,9 +247,16 @@ def build_index():
                         for it in sec_items)
         blurb = SECTION_BLURB.get(sec, "")
         section_id = f"topic-{index + 1}"
+        icon = SECTION_ICONS.get(sec)
+        icon_html = (
+            f'<picture class="section-icon" aria-hidden="true">'
+            f'<source srcset="assets/sections/{icon}.gif" media="(prefers-reduced-motion: no-preference)">'
+            f'<img src="assets/sections/{icon}.png" width="96" height="64" alt="">'
+            '</picture>'
+        ) if icon else ""
         topic_links.append(f'<a href="#{section_id}">{html.escape(sec)}</a>')
         sections += (f'<section class="section" aria-labelledby="{section_id}">\n'
-                     f'  <h2 class="section-title" id="{section_id}">{html.escape(sec)}</h2>\n'
+                     f'  <h2 class="section-title" id="{section_id}">{icon_html}<span>{html.escape(sec)}</span></h2>\n'
                      + (f'  <p class="section-desc">{html.escape(blurb)}</p>\n' if blurb else "")
                      + f'  <div class="grid">{cards}</div>\n</section>\n')
     book = "here" if BOOK_URL == "#" else f'<a href="{BOOK_URL}">here</a>'
@@ -262,6 +275,7 @@ def build_index():
     (coding, mathematical reasoning, …).</p>
     {book_cta}
     <nav class="topic-nav" aria-label="Browse by topic">{"".join(topic_links)}</nav>
+    <button class="section-animation-toggle" type="button" aria-controls="main-content" hidden>Pause section animations</button>
   </div>
 </header>
 <main class="grid-wrap" id="main-content" tabindex="-1">
@@ -269,7 +283,7 @@ def build_index():
 <footer class="site-foot">Website generated with assistance from AI agents · {datetime.date.today().isoformat()} ·
 sources on <a href="https://www.kaggle.com/{KAGGLE_USER}/code">Kaggle</a></footer>
 """
-    out = page_shell("Yassine Alouini — Notebooks & Research", "", body, rel="",
+    out = page_shell("Yassine Alouini — Notebooks & Research", '<script src="assets/section-animations.js" defer></script>', body, rel="",
                      description="Notebooks and research by Yassine Alouini on computer vision, video, language models, and deep learning theory.")
     (ROOT / "index.html").write_text(out)
     print("index ->", ROOT / "index.html")
