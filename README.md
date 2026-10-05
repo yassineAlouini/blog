@@ -14,6 +14,11 @@ thin rules, and muted ochre tags.
 
 The landing page (`index.html`) is organized into themed sections. Each post is a
 self-contained HTML page under `posts/` with the original narrative, math and code.
+Each section has a small pixel-art GIF: a segmentation scan for Computer Vision,
+a moving filmstrip for Video Processing, flowing tokens for NLP & LLMs, and a
+matrix with a spectrum histogram for Research. They share the navy and ochre
+palette. A single control pauses all four; reduced-motion preferences select
+static images even without JavaScript.
 
 ### 🎨 Computer Vision
 *Segmentation, detection, and the metrics that score them.*
@@ -77,6 +82,10 @@ posts/                # generated post pages (one .html per post)
 assets/
   style.css           # navy and ochre old-web theme (shared)
   pygments.css        # black-and-white code highlighting (generated)
+  sections/           # four 96×64 GIFs and matching PNG stills
+  section-animations.js # pause, reduced-motion, and visibility controls
+code/render-section-gifs.py # optional exporter (Pillow + Playwright Chromium)
+code/section-gif-renderer.js # deterministic pixel-art source
 _src/<slug>/<slug>.ipynb   # source notebooks pulled from Kaggle (notebook posts)
 _static/<slug>.md          # hand-written markdown articles (markdown posts)
 ```
