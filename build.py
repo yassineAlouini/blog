@@ -255,6 +255,17 @@ def build_index():
   <div class="hero-inner">
     <div class="eyebrow">Yassine Alouini</div>
     <h1>Notebooks &amp; Research</h1>
+    <figure class="reactor" aria-label="Pixel-art fusion reactor">
+      <div class="reactor-stage">
+        <canvas id="fusion-reactor" width="320" height="220" role="img"
+          aria-label="An isometric pixel-art fusion reactor in shades of navy, with plasma pulsing inside its open toroidal chamber.">
+          <img src="assets/fusion-reactor.png" width="320" height="220" alt="An isometric pixel-art fusion reactor with a navy plasma ring.">
+        </canvas>
+      </div>
+      <figcaption><span>MAGNETIC CONFINEMENT <span aria-hidden="true">/</span> 01</span>
+        <button class="reactor-toggle" type="button" aria-controls="fusion-reactor" hidden>Pause animation</button>
+      </figcaption>
+    </figure>
     <p class="lede">I am a <strong>computer vision expert</strong> — at least on the subset of
     deep-learning image applications. I have written a computer vision book; you can get it {book}.</p>
     <p class="lede bio">Focusing now on some <strong>multi-modal applications</strong>
@@ -269,7 +280,7 @@ def build_index():
 <footer class="site-foot">Website generated with assistance from AI agents · {datetime.date.today().isoformat()} ·
 sources on <a href="https://www.kaggle.com/{KAGGLE_USER}/code">Kaggle</a></footer>
 """
-    out = page_shell("Yassine Alouini — Notebooks & Research", "", body, rel="",
+    out = page_shell("Yassine Alouini — Notebooks & Research", '<script src="assets/fusion-reactor.js" defer></script>', body, rel="",
                      description="Notebooks and research by Yassine Alouini on computer vision, video, language models, and deep learning theory.")
     (ROOT / "index.html").write_text(out)
     print("index ->", ROOT / "index.html")
