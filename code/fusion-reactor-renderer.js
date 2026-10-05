@@ -1,157 +1,185 @@
-/* A small, hand-drawn pixel scene. All geometry uses the same low-resolution
-   isometric space; CSS enlarges the pixels without smoothing. */
+/* A small pixel-art stellarator. A twisted torus (the cross-section is an ellipse that
+   rotates five times around the ring), wrapped in non-planar modular coils and cut open
+   at the front to show the plasma. Everything is drawn into a low-resolution depth
+   buffer and shaded in a few flat steps; only the plasma has colour. */
 (() => {
   "use strict";
   const canvas = document.querySelector("#fusion-reactor");
   if (!canvas) return;
   const ctx = canvas.getContext("2d");
   if (!ctx) return;
-  const ink = getComputedStyle(canvas).getPropertyValue("--navy").trim() || "#193653";
-  const colors = ["#ffffff", "#edf1f5", "#d9e2ea", "#b8c8d7", "#8ca3ba", "#5c7b98", "#365774", ink];
-  const TAU = Math.PI * 2;
+  const W = 320, H = 220, TAU = Math.PI * 2;
 
-  function box(x, y, w, h, color) {
-    ctx.fillStyle = color;
-    ctx.fillRect(Math.round(x), Math.round(y), w, h);
+  // Greys for the machine (light -> dark), magentas for the plasma (dim -> hot).
+  const GREY = ["#ffffff", "#ececec", "#d4d4d4", "#b0b0b0", "#8a8a8a", "#646464", "#3e3e3e", "#1c1c1c"];
+  const PLASMA = ["#4a1070", "#8e2a9e", "#d4459a", "#ff7ab8", "#ffd6ea"];
+  const PALETTE = GREY.concat(PLASMA);
+  const RGB = PALETTE.map(h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16)));
+  const INK = 7, BG = 0;
+
+  // Geometry (machine units) and a fixed three-quarter view from above.
+  const R0 = 1.0, NP = 5;                      // major radius, field periods
+  const VA = 0.38, VB = 0.28;                  // vessel cross-section semi-axes
+  const PA = 0.22, PB = 0.13;                  // plasma cross-section semi-axes
+  const EL = 38 * Math.PI / 180, AZ = -18 * Math.PI / 180;
+  const SC = 70, CX = 160, CY = 100;
+  const LIGHT = norm([-0.45, 0.35, 0.82]);
+  const CUT = 44 * Math.PI / 180;              // half-width of the front cutaway (vessel)
+  const COIL_CUT = 30 * Math.PI / 180;         // coils are removed over a narrower window
+
+  const depth = new Float32Array(W * H), color = new Uint8Array(W * H), obj = new Uint8Array(W * H);
+  const OBJ = { none: 0, base: 1, vessel: 2, coil: 3, plasma: 4, leg: 5 };
+
+  function norm(v) { const n = Math.hypot(...v); return v.map(x => x / n); }
+  function dot(a, b) { return a[0] * b[0] + a[1] * b[1] + a[2] * b[2]; }
+
+  // world -> [screen x, screen y, depth]; larger depth is nearer the viewer.
+  function project(x, y, z) {
+    const x1 = x * Math.cos(AZ) - y * Math.sin(AZ);
+    const y1 = x * Math.sin(AZ) + y * Math.cos(AZ);
+    return [CX + x1 * SC, CY + (y1 * Math.sin(EL) - z * Math.cos(EL)) * SC, y1 * Math.cos(EL) + z * Math.sin(EL)];
+  }
+  // unit vector from the scene towards the camera, in world coordinates
+  const VIEW = norm([Math.cos(EL) * Math.sin(AZ), Math.cos(EL) * Math.cos(AZ), Math.sin(EL)]);
+
+  function plot(p, c, o) {
+    const x = Math.round(p[0]), y = Math.round(p[1]);
+    if (x < 0 || y < 0 || x >= W || y >= H) return;
+    const i = y * W + x;
+    if (p[2] > depth[i]) { depth[i] = p[2]; color[i] = c; obj[i] = o; }
   }
 
-  // Scanline polygons and integer lines keep every edge on the pixel grid.
-  function polygon(points, color) {
-    const min = Math.ceil(Math.min(...points.map(p => p[1])));
-    const max = Math.ceil(Math.max(...points.map(p => p[1])));
-    for (let y = min; y < max; y++) {
-      const intersections = [];
-      for (let i = 0; i < points.length; i++) {
-        const a = points[i], b = points[(i + 1) % points.length];
-        if ((a[1] <= y && b[1] > y) || (b[1] <= y && a[1] > y)) {
-          intersections.push(a[0] + (y - a[1]) * (b[0] - a[0]) / (b[1] - a[1]));
+  // Flat pixel-art shading: Lambert term quantised to a few grey steps.
+  function shade(n, bright, dark) {
+    const l = Math.max(0, dot(n, LIGHT));
+    const k = l > .75 ? 0 : l > .5 ? 1 : l > .28 ? 2 : 3;
+    return Math.min(dark, bright + k);
+  }
+
+  // Point on the twisted surface: ellipse (a, b) rotated by alpha = NP*phi/2 around the
+  // magnetic axis, which itself bobs slightly up and down with the field period.
+  function surface(phi, th, a, b) {
+    const al = NP * phi / 2;
+    const u = a * Math.cos(th) * Math.cos(al) - b * Math.sin(th) * Math.sin(al);
+    const v = a * Math.cos(th) * Math.sin(al) + b * Math.sin(th) * Math.cos(al);
+    const nu0 = Math.cos(th) / a, nv0 = Math.sin(th) / b;      // ellipse normal, local frame
+    const nu = nu0 * Math.cos(al) - nv0 * Math.sin(al), nv = nu0 * Math.sin(al) + nv0 * Math.cos(al);
+    const R = R0 + u, z = v + 0.035 * Math.sin(NP * phi);
+    return { p: [R * Math.cos(phi), R * Math.sin(phi), z], n: norm([nu * Math.cos(phi), nu * Math.sin(phi), nv]) };
+  }
+
+  // Toroidal angle of a point measured from the direction facing the viewer.
+  const FRONT = Math.atan2(Math.cos(AZ), Math.sin(AZ)); // world phi that faces the camera
+  function fromFront(phi) { let d = (phi - FRONT) % TAU; if (d > Math.PI) d -= TAU; if (d < -Math.PI) d += TAU; return Math.abs(d); }
+
+  function base() {
+    // A low round plinth with a stepped rim, then six support legs up to the vessel.
+    for (let r = 0; r <= 1.62; r += 0.006) for (let t = 0; t < TAU; t += 0.004 / Math.max(r, 0.05)) {
+      const x = r * Math.cos(t), y = r * Math.sin(t);
+      plot(project(x, y, -0.5), r > 1.56 ? 3 : r > 1.48 ? 2 : 1, OBJ.base);
+    }
+    for (let h = 0; h <= 0.07; h += 0.004) for (let t = 0; t < TAU; t += 0.002) {
+      const p = project(1.62 * Math.cos(t), 1.62 * Math.sin(t), -0.5 - h);
+      plot(p, Math.cos(t + AZ) > 0 ? 4 : 3, OBJ.base);
+    }
+    for (let k = 0; k < 6; k++) {
+      const phi = k * TAU / 6 + 0.3;
+      for (let h = -0.5; h <= -0.16; h += 0.004) for (let t = 0; t < TAU; t += 0.25) {
+        const x = (R0 + 0.035 * Math.cos(t)) * Math.cos(phi) - 0.035 * Math.sin(t) * Math.sin(phi);
+        const y = (R0 + 0.035 * Math.cos(t)) * Math.sin(phi) + 0.035 * Math.sin(t) * Math.cos(phi);
+        plot(project(x, y, h), Math.cos(t) > 0 ? 4 : 5, OBJ.leg);
+      }
+    }
+  }
+
+  function vessel() {
+    for (let phi = 0; phi < TAU; phi += 0.0045) {
+      const cut = fromFront(phi) < CUT;
+      for (let th = 0; th < TAU; th += 0.024) {
+        const s = surface(phi, th, VA, VB);
+        // In the cutaway the upper, viewer-facing shell is removed; the lower front wall
+        // stays, so the plasma reads as sitting inside an open channel.
+        if (cut && dot(s.n, VIEW) > -0.15 && s.n[2] > -0.45) continue;
+        const inside = dot(s.n, VIEW) < 0;
+        plot(project(...s.p), inside ? shade(s.n.map(x => -x), 4, 6) : shade(s.n, 1, 4), OBJ.vessel);
+      }
+    }
+    // Cut edges: a thin dark rim where the shell was opened.
+    for (const edge of [FRONT - CUT, FRONT + CUT]) for (let th = 0; th < TAU; th += 0.01) {
+      const s = surface(edge, th, VA, VB);
+      if (dot(s.n, VIEW) > -0.15 && s.n[2] > -0.45) plot(project(...s.p.map((v, i) => v + s.n[i] * 0.004)), 6, OBJ.vessel);
+    }
+  }
+
+  function coils() {
+    // Modular, non-planar coils: each loop wobbles in toroidal angle as it goes round.
+    const N = 20;
+    for (let k = 0; k < N; k++) {
+      const phi0 = (k + 0.5) * TAU / N;
+      if (fromFront(phi0) < COIL_CUT) continue;
+      for (let th = 0; th < TAU; th += 0.006) {
+        const phi = phi0 + 0.07 * Math.sin(2 * th + k * 1.3);
+        for (let w = -0.022; w <= 0.022; w += 0.011) for (let g = 1.12; g <= 1.24; g += 0.04) {
+          const s = surface(phi + w, th, VA * g, VB * g + 0.03);
+          plot(project(...s.p), shade(s.n, 4, 7), OBJ.coil);
         }
       }
-      intersections.sort((a, b) => a - b);
-      for (let i = 0; i + 1 < intersections.length; i += 2) {
-        box(Math.ceil(intersections[i]), y, Math.ceil(intersections[i + 1]) - Math.ceil(intersections[i]), 1, color);
+    }
+  }
+
+  function plasma(time) {
+    // "Forming" plasma: the column breathes, and bright filaments stream along the
+    // twisted field lines (helical phase 2*theta - NP*phi keeps the pattern periodic).
+    const pulse = (Math.sin(time * TAU / 3.6) + 1) / 2;
+    const g = 0.86 + 0.14 * pulse;
+    for (let phi = 0; phi < TAU; phi += 0.004) for (let th = 0; th < TAU; th += 0.03) {
+      const s = surface(phi, th, PA * g, PB * g);
+      const facing = Math.max(0, dot(s.n, VIEW));
+      const stripe = Math.sin(2 * th - NP * phi + 3 * phi - time * TAU / 3.6 * 2);
+      let c = facing > .82 ? 3 : facing > .55 ? 2 : facing > .25 ? 1 : 0;
+      if (stripe > 0.86) c = Math.min(4, c + 1 + (pulse > .5 ? 1 : 0));
+      if (pulse > .8 && facing > .9) c = 4;
+      plot(project(...s.p), GREY.length + c, OBJ.plasma);
+    }
+  }
+
+  function outline() {
+    // Pixel-art ink line on the far side of every silhouette and depth step.
+    const out = color.slice();
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const i = y * W + x;
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        const X = x + dx, Y = y + dy;
+        if (X < 0 || Y < 0 || X >= W || Y >= H) continue;
+        const j = Y * W + X;
+        if (obj[j] === OBJ.none || obj[j] === obj[i] && Math.abs(depth[j] - depth[i]) < 0.06) continue;
+        if (depth[j] > depth[i] + 0.02 || obj[i] === OBJ.none) {
+          out[i] = obj[j] === OBJ.plasma ? GREY.length : INK;
+          break;
+        }
       }
     }
-  }
-
-  function line(a, b, color, width = 1) {
-    const steps = Math.max(Math.abs(b[0] - a[0]), Math.abs(b[1] - a[1]));
-    for (let i = 0; i <= steps; i++) {
-      const t = steps ? i / steps : 0;
-      box(a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, width, width, color);
-    }
-  }
-
-  function ellipsePoint(angle, rx, ry, y = 100) {
-    return [160 + Math.cos(angle) * rx, y + Math.sin(angle) * ry];
-  }
-
-  function ring(rx, ry, thickness, y, color, start = 0, end = TAU) {
-    const points = [];
-    const steps = Math.ceil((end - start) * 24);
-    for (let i = 0; i <= steps; i++) points.push(ellipsePoint(start + (end - start) * i / steps, rx, ry, y));
-    for (let i = steps; i >= 0; i--) points.push(ellipsePoint(start + (end - start) * i / steps, rx - thickness, ry - thickness * .48, y));
-    polygon(points, color);
-  }
-
-  function wall(rx, ry, y, height, color, start = 0, end = Math.PI) {
-    const points = [];
-    for (let a = start; a <= end + .001; a += (end - start) / 64) points.push(ellipsePoint(a, rx, ry, y));
-    for (let a = end; a >= start - .001; a -= (end - start) / 64) points.push(ellipsePoint(a, rx, ry, y + height));
-    polygon(points, color);
-  }
-
-  function coil(angle, front) {
-    const outer = ellipsePoint(angle, 98, 46, 91);
-    const inner = ellipsePoint(angle, 83, 38, 91);
-    const [x, y] = outer;
-    const cap = [[x - 5, y - 22], [x + 5, y - 25], [inner[0] + 5, inner[1] - 25], [inner[0] - 5, inner[1] - 22]];
-    polygon([[x - 5, y - 22], [x + 5, y - 25], [x + 5, y + 21], [x - 5, y + 24]], colors[front ? 6 : 5]);
-    polygon([[x + 5, y - 25], [inner[0] + 5, inner[1] - 25], [inner[0] + 5, inner[1] + 17], [x + 5, y + 21]], colors[7]);
-    polygon(cap, colors[3]);
-    for (let j = 0; j < 6; j++) line([x - 4, y - 16 + j * 6], [x + 3, y - 18 + j * 6], colors[3]);
-    box(x - 2, y - 22, 2, 3, colors[0]);
+    color.set(out);
   }
 
   function draw(time) {
-    ctx.clearRect(0, 0, 320, 220);
-    box(0, 0, 320, 220, colors[0]);
-    const pulse = (Math.sin(time * TAU / 3.6) + 1) / 2;
-
-    // Ground and the three faces of the reactor's isometric plinth.
-    polygon([[31, 163], [153, 106], [293, 164], [173, 215]], colors[1]);
-    for (let i = -2; i <= 2; i++) {
-      line([49 + i * 15, 164 + i * 7], [166 + i * 15, 111 + i * 7], colors[2]);
-      line([55 + i * 15, 163 - i * 7], [174 + i * 15, 214 - i * 7], colors[2]);
+    depth.fill(-1e9); color.fill(BG); obj.fill(OBJ.none);
+    base(); vessel(); coils(); plasma(time); outline();
+    const img = ctx.createImageData(W, H);
+    for (let i = 0; i < W * H; i++) {
+      const c = RGB[color[i]];
+      img.data[4 * i] = c[0]; img.data[4 * i + 1] = c[1]; img.data[4 * i + 2] = c[2]; img.data[4 * i + 3] = 255;
     }
-    polygon([[43, 147], [153, 96], [279, 150], [169, 201]], colors[7]);
-    polygon([[43, 138], [153, 87], [279, 141], [169, 192]], colors[2]);
-    polygon([[43, 138], [169, 192], [169, 201], [43, 147]], colors[5]);
-    polygon([[169, 192], [279, 141], [279, 150], [169, 201]], colors[6]);
-    line([47, 138], [169, 190], colors[0]);
-    line([169, 190], [275, 141], colors[3]);
-
-    // Lower vacuum vessel, inset panels, and the rear containment magnets.
-    wall(94, 44, 115, 20, colors[7]);
-    ring(94, 44, 94, 115, colors[4]);
-    for (let a = .2; a < Math.PI; a += .23) {
-      const p = ellipsePoint(a, 94, 44, 118);
-      line(p, [p[0], p[1] + 12], colors[3], 2);
-    }
-    ring(95, 45, 4, 132, colors[5], 0, Math.PI);
-    for (let a = Math.PI + .22; a < TAU; a += .45) coil(a, false);
-    wall(91, 43, 81, 30, colors[5], Math.PI, TAU);
-    ring(91, 43, 12, 81, colors[3], Math.PI, TAU);
-    ring(91, 43, 2, 80, colors[0], Math.PI, TAU);
-    wall(79, 37, 81, 27, colors[7], Math.PI, TAU);
-    ring(86, 40, 58, 113, colors[2]);
-    ring(82, 38, 2, 111, colors[4]);
-
-    // A dark, saturated plasma torus. Its halo breathes in discrete shades;
-    // bright packets circulate along the field, with no blur or gradients.
-    ring(75, 35, 22, 98, colors[pulse > .55 ? 3 : 2]);
-    ring(71, 33, 19, 97, colors[pulse > .35 ? 5 : 4]);
-    ring(68, 31, 12 + Math.round(pulse * 3), 96, colors[7]);
-    ring(65, 30, 2, 94, colors[pulse > .7 ? 0 : 3]);
-    for (let i = 0; i < 9; i++) {
-      const angle = (time * TAU * 4 / (9 * 3.6) + i * TAU / 9) % TAU;
-      ring(64, 29, 3, 96, colors[0], angle, angle + .16);
-      const p = ellipsePoint(angle + .18, 62, 28, 96);
-      box(p[0], p[1], 2, 2, colors[3]);
-    }
-
-    // Central solenoid, drawn over the back of the plasma for depth.
-    wall(22, 11, 67, 49, colors[7]);
-    for (let y = 74; y < 116; y += 5) ring(22, 11, 3, y, colors[4], 0, Math.PI);
-    polygon([[145, 67], [152, 70], [152, 116], [145, 113]], colors[5]);
-    ring(25, 12, 25, 67, colors[3]);
-    ring(25, 12, 3, 67, colors[0]);
-    ring(14, 7, 14, 66, colors[6]);
-    ring(8, 4, 8, 65, colors[7]);
-
-    // The front is cut away so the pulsing plasma remains visible.
-    wall(91, 43, 112, 8, colors[6]);
-    ring(91, 43, 9, 112, colors[3], 0, Math.PI);
-    ring(91, 43, 2, 111, colors[0], 0, Math.PI);
-    for (const a of [.15, .63, 2.51, 2.99]) coil(a, true);
-
-    // Service pipe and a miniature control console on the plinth.
-    line([208, 158], [223, 165], colors[7], 5);
-    line([223, 165], [247, 153], colors[7], 5);
-    line([209, 158], [223, 164], colors[3], 2);
-    polygon([[99, 157], [115, 150], [139, 160], [123, 168]], colors[7]);
-    polygon([[99, 157], [123, 168], [123, 180], [99, 170]], colors[5]);
-    polygon([[123, 168], [139, 160], [139, 172], [123, 180]], colors[6]);
-    polygon([[103, 157], [114, 153], [130, 160], [120, 164]], colors[2]);
-    line([107, 157], [119, 161], colors[7]);
-    for (let i = 0; i < 3; i++) box(105 + i * 5, 167 + i * 2, 2, 2, colors[pulse > .6 ? 0 : 3]);
+    ctx.putImageData(img, 0, 0);
     // Quiet registration marks make the drawing feel like a printed plate.
-    for (const [x, y, sign] of [[30, 29, 1], [288, 29, -1]]) {
-      line([x, y], [x + sign * 8, y], colors[3]);
-      line([x, y], [x, y + 8], colors[3]);
+    ctx.fillStyle = GREY[3];
+    for (const [x, sign] of [[30, 1], [288, -1]]) {
+      ctx.fillRect(Math.min(x, x + sign * 8), 29, 9, 1);
+      ctx.fillRect(x, 29, 1, 9);
     }
   }
 
+  window.REACTOR_PALETTE = PALETTE;
   window.drawFusionReactor = draw;
   draw(0);
 })();

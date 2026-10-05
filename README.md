@@ -14,8 +14,9 @@ thin rules, and muted ochre tags.
 
 The landing page (`index.html`) is organized into themed sections. Each post is a
 self-contained HTML page under `posts/` with the original narrative, math and code.
-Its header includes a monochrome, isometric pixel-art fusion reactor with pulsing
-plasma, delivered as a looping GIF. The animation has a pause control, respects
+Its header includes a pixel-art stellarator (a twisted, donut-shaped fusion reactor
+wrapped in wavy coils) in black, white and grey, with only the forming plasma in
+colour, delivered as a looping GIF. The animation has a pause control, respects
 reduced-motion preferences, and switches to a still while offscreen. Without
 JavaScript, the GIF plays unless the reader prefers reduced motion.
 

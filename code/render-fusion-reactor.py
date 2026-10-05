@@ -15,9 +15,9 @@ frames = []
 with sync_playwright() as p:
     browser = p.chromium.launch()
     page = browser.new_page()
-    page.set_content('<canvas id="fusion-reactor" width="320" height="220" '
-                     'style="--navy:#193653"></canvas>')
+    page.set_content('<canvas id="fusion-reactor" width="320" height="220"></canvas>')
     page.add_script_tag(path=str(ROOT / "code/fusion-reactor-renderer.js"))
+    palette_hex = page.evaluate("window.REACTOR_PALETTE")
     for frame in range(45):
         data = page.evaluate("""time => {
             window.drawFusionReactor(time);
@@ -27,8 +27,10 @@ with sync_playwright() as p:
     browser.close()
 
 frames[0].save(ROOT / "assets/fusion-reactor.png")
-# A shared palette preserves the eight original shades without dithering.
-palette = frames[0].quantize(colors=8, dither=Image.Dither.NONE)
+# The renderer only ever writes its own palette (greys + plasma), so quantising to exactly
+# those colours is lossless and keeps every frame on the same palette, without dithering.
+rgb = [int(h[i:i + 2], 16) for h in palette_hex for i in (1, 3, 5)]
+palette = Image.new("P", (1, 1)); palette.putpalette(rgb + rgb[:3] * (256 - len(palette_hex)))
 frames = [frame.quantize(palette=palette, dither=Image.Dither.NONE) for frame in frames]
 output = ROOT / "assets/fusion-reactor.gif"
 frames[0].save(output, save_all=True, append_images=frames[1:],

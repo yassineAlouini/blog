@@ -260,7 +260,7 @@ def build_index():
         <picture>
           <source srcset="assets/fusion-reactor.gif" media="(prefers-reduced-motion: no-preference)">
           <img id="fusion-reactor" src="assets/fusion-reactor.png" width="320" height="220"
-            alt="An isometric pixel-art fusion reactor in shades of navy, with plasma pulsing inside its open toroidal chamber.">
+            alt="A pixel-art stellarator in black, white and grey: a twisted, donut-shaped vessel wrapped in wavy coils, cut open at the front to show glowing pink plasma forming inside.">
         </picture>
       </div>
       <figcaption><span>MAGNETIC CONFINEMENT <span aria-hidden="true">/</span> 01</span>
