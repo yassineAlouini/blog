@@ -14,11 +14,6 @@ thin rules, and muted ochre tags.
 
 The landing page (`index.html`) is organized into themed sections. Each post is a
 self-contained HTML page under `posts/` with the original narrative, math and code.
-Its header includes a pixel-art stellarator (a twisted, donut-shaped fusion reactor
-wrapped in wavy coils) in black, white and grey, with only the forming plasma in
-colour, delivered as a looping GIF. The animation has a pause control, respects
-reduced-motion preferences, and switches to a still while offscreen. Without
-JavaScript, the GIF plays unless the reader prefers reduced motion.
 
 ### 🎨 Computer Vision
 *Segmentation, detection, and the metrics that score them.*
@@ -82,11 +77,6 @@ posts/                # generated post pages (one .html per post)
 assets/
   style.css           # navy and ochre old-web theme (shared)
   pygments.css        # black-and-white code highlighting (generated)
-  fusion-reactor.gif  # looping pixel-art animation (45 frames, 3.6 seconds)
-  fusion-reactor.js   # GIF playback / static-image controls (no dependencies)
-  fusion-reactor.png  # still for paused and reduced-motion states
-code/render-fusion-reactor.py  # optional GIF/PNG exporter (Pillow + Playwright)
-code/fusion-reactor-renderer.js # pixel-art source used by the exporter
 _src/<slug>/<slug>.ipynb   # source notebooks pulled from Kaggle (notebook posts)
 _static/<slug>.md          # hand-written markdown articles (markdown posts)
 ```
