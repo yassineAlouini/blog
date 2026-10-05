@@ -257,10 +257,11 @@ def build_index():
     <h1>Notebooks &amp; Research</h1>
     <figure class="reactor" aria-label="Pixel-art fusion reactor">
       <div class="reactor-stage">
-        <canvas id="fusion-reactor" width="320" height="220" role="img"
-          aria-label="An isometric pixel-art fusion reactor in shades of navy, with plasma pulsing inside its open toroidal chamber.">
-          <img src="assets/fusion-reactor.png" width="320" height="220" alt="An isometric pixel-art fusion reactor with a navy plasma ring.">
-        </canvas>
+        <picture>
+          <source srcset="assets/fusion-reactor.gif" media="(prefers-reduced-motion: no-preference)">
+          <img id="fusion-reactor" src="assets/fusion-reactor.png" width="320" height="220"
+            alt="An isometric pixel-art fusion reactor in shades of navy, with plasma pulsing inside its open toroidal chamber.">
+        </picture>
       </div>
       <figcaption><span>MAGNETIC CONFINEMENT <span aria-hidden="true">/</span> 01</span>
         <button class="reactor-toggle" type="button" aria-controls="fusion-reactor" hidden>Pause animation</button>

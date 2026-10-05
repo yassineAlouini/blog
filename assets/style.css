@@ -48,7 +48,7 @@ article>.note{margin:20px 24px}  /* line up with the post text */
 .reactor{float:right;width:360px;max-width:44%;margin:0 0 16px 32px;color:var(--navy)}
 .reactor-stage{aspect-ratio:16/11;background:url("fusion-reactor.png") center/100% 100% no-repeat;
   image-rendering:pixelated}
-.reactor canvas{display:block;width:100%;height:auto;image-rendering:pixelated}
+.reactor img{display:block;width:100%;height:auto;image-rendering:pixelated}
 .reactor figcaption{display:flex;align-items:center;justify-content:space-between;gap:8px;
   border-top:1px solid var(--line);padding-top:8px;font:10px/1.5 var(--mono);letter-spacing:.02em}
 .reactor-toggle{border:0;padding:4px 0;background:transparent;color:var(--navy);

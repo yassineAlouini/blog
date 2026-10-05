@@ -15,8 +15,9 @@ thin rules, and muted ochre tags.
 The landing page (`index.html`) is organized into themed sections. Each post is a
 self-contained HTML page under `posts/` with the original narrative, math and code.
 Its header includes a monochrome, isometric pixel-art fusion reactor with pulsing
-plasma. The animation has a pause control, respects reduced-motion preferences,
-and pauses while offscreen. A static image remains visible without JavaScript.
+plasma, delivered as a looping GIF. The animation has a pause control, respects
+reduced-motion preferences, and switches to a still while offscreen. Without
+JavaScript, the GIF plays unless the reader prefers reduced motion.
 
 ### 🎨 Computer Vision
 *Segmentation, detection, and the metrics that score them.*
@@ -80,8 +81,11 @@ posts/                # generated post pages (one .html per post)
 assets/
   style.css           # navy and ochre old-web theme (shared)
   pygments.css        # black-and-white code highlighting (generated)
-  fusion-reactor.js   # pixel-art reactor drawing and animation (no dependencies)
-  fusion-reactor.png  # static fallback for the homepage animation
+  fusion-reactor.gif  # looping pixel-art animation (45 frames, 3.6 seconds)
+  fusion-reactor.js   # GIF playback / static-image controls (no dependencies)
+  fusion-reactor.png  # still for paused and reduced-motion states
+code/render-fusion-reactor.py  # optional GIF/PNG exporter (Pillow + Playwright)
+code/fusion-reactor-renderer.js # pixel-art source used by the exporter
 _src/<slug>/<slug>.ipynb   # source notebooks pulled from Kaggle (notebook posts)
 _static/<slug>.md          # hand-written markdown articles (markdown posts)
 ```
