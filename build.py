@@ -66,11 +66,11 @@ BOOK_URL = "https://alouinimohamedyass.gumroad.com/l/computer_vision_with_pytorc
 # `category` may be a string or a list — the card then appears in each section.
 MD_POSTS = [
     dict(slug="lecun-world-models",
-         category=["Computer Vision", "Research"],
+         category="Computer Vision",
          title="LeCun's World Models: JEPA, LeJEPA & LeWorldModel",
          subtitle="A technical walkthrough of the JEPA world-model line — the maths, "
                   "a PyTorch reconstruction, and the AMI Labs startup.",
-         tags=["World Models", "JEPA", "Research"],
+         tags=["WIP", "World Models", "JEPA", "Research"],
          src="_static/lecun-world-models.md",
          source=("https://arxiv.org/abs/2603.19312", "▶ LeWorldModel on arXiv"),
          foot='Research digest compiled from arXiv and press sources · '),
