@@ -98,6 +98,10 @@ class HighlightRenderer(mistune.HTMLRenderer):
         # The page title owns h1; article headings start at h2.
         return super().heading(text, min(level + 1, 6), **attrs)
 
+    def block_math(self, text):
+        # Match the display delimiters configured in MATHJAX below.
+        return '<div class="math">\\[\n' + html.escape(text) + '\n\\]</div>\n'
+
     def block_code(self, code, info=None):
         lang = info.strip().split(None, 1)[0].lower() if info else ""
         try:
