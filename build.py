@@ -98,6 +98,10 @@ class HighlightRenderer(mistune.HTMLRenderer):
         # The page title owns h1; article headings start at h2.
         return super().heading(text, min(level + 1, 6), **attrs)
 
+    def block_math(self, text):
+        # Match the display delimiters configured in MATHJAX below.
+        return '<div class="math">\\[\n' + html.escape(text) + '\n\\]</div>\n'
+
     def block_code(self, code, info=None):
         lang = info.strip().split(None, 1)[0].lower() if info else ""
         try:
@@ -179,15 +183,20 @@ def tag_span(t):
     cls = "tag tag--wip" if t.strip().lower() == "wip" else "tag"
     return f'<span class="{cls}">{html.escape(t)}</span>'
 
-def write_post(slug, title, subtitle, tags, body_inner, source_html="", note_html="", foot_html=""):
+def write_post(slug, title, subtitle, tags, body_inner, source_html="", note_html="", foot_html="", published_on=""):
     tags_html = "".join(tag_span(t) for t in tags)
+    title_html = f'<h1>{html.escape(title)}</h1>'
+    if published_on:
+        date = datetime.date.fromisoformat(published_on)
+        title_html = (f'<div class="post-title-row">{title_html}'
+                      f'<time datetime="{date.isoformat()}">{date:%d %B %Y}</time></div>')
     body = f"""
 <a class="back" href="../index.html">← All posts</a>
 <main id="main-content" tabindex="-1">
 <article>
   <header class="post-head">
     <div class="tags">{tags_html}</div>
-    <h1>{html.escape(title)}</h1>
+    {title_html}
     <p class="subtitle">{html.escape(subtitle)}</p>
     {source_html}
   </header>
@@ -202,13 +211,16 @@ def write_post(slug, title, subtitle, tags, body_inner, source_html="", note_htm
     print("post  ->", POSTS_DIR / f"{slug}.html", f"({len(out)//1024}KB)")
 
 def build_post(p):
-    body_inner = notebook_body(SRC / p["slug"] / f"{p['slug']}.ipynb")
+    nb_path = SRC / p["slug"] / f"{p['slug']}.ipynb"
+    body_inner = notebook_body(nb_path)
+    published_on = json.loads(nb_path.read_text()).get("metadata", {}).get("blog_source", {}).get("publication_date", "")
     kaggle = f"https://www.kaggle.com/code/{KAGGLE_USER}/{p['slug']}"
     write_post(p["slug"], p["title"], p["subtitle"], p["tags"], body_inner,
                source_html=f'<p class="source-link"><a href="{kaggle}" target="_blank" rel="noopener">▶ View original on Kaggle</a></p>',
                note_html='<div class="note">Ported from the Kaggle notebook source (narrative + code). '
                          'Cell outputs are not re-executed here — run it on Kaggle for live results.</div>',
-               foot_html=f'Ported from <a href="{kaggle}">kaggle.com/code/{KAGGLE_USER}/{p["slug"]}</a> · ')
+               foot_html=f'Ported from <a href="{kaggle}">kaggle.com/code/{KAGGLE_USER}/{p["slug"]}</a> · ',
+               published_on=published_on)
 
 def build_md_post(p):
     body_inner = f'<div class="md">{md((ROOT / p["src"]).read_text())}</div>'
