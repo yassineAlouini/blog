@@ -128,3 +128,10 @@ triggers a rebuild; the live site updates within a minute.
 Website generated with assistance from AI agents. The look is shared with
 [Light to Dark](https://github.com/yassineAlouini/watercolor-helper): an old-web page, kept
 elegant and minimal.
+
+The top navigation is styled by `/assets/site-navigation.css`, served by the
+personal homepage repository. That single file keeps the homepage, Sketchbook,
+blog index and posts visually consistent. `site_navigation()` in `build.py`
+uses the same Home / Blog / Sketchbook / GitHub order as the personal site.
+For a local preview including that stylesheet and those destinations, run
+`python3 code/serve.py` from the adjacent `yassineAlouini.github.io` repository.
