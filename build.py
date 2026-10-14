@@ -175,7 +175,7 @@ def page_shell(title, head_extra, body, rel="../", description=""):
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>{html.escape(title)}</title>
 <meta name="description" content="{html.escape(description)}">
-<link rel="stylesheet" href="{rel}assets/style.css">
+<link rel="stylesheet" href="{rel}assets/style.css?v=shared-navigation-2">
 <link rel="stylesheet" href="{rel}assets/pygments.css">
 <link rel="stylesheet" href="/assets/site-navigation.css?v=1">
 {head_extra}

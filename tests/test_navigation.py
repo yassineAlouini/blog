@@ -22,6 +22,7 @@ class Links(HTMLParser):
 class NavigationTests(unittest.TestCase):
     def assert_site_links(self, markup):
         self.assertIn('/assets/site-navigation.css?v=1', markup)
+        self.assertIn('assets/style.css?v=shared-navigation-2', markup)
         links = Links(markup).links
         hrefs = {a.get('href') for a in links}
         self.assertTrue({'/', '/blog/', '/sketches/'}.issubset(hrefs))
