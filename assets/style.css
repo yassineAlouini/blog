@@ -31,6 +31,15 @@ a:focus-visible{outline:2px solid var(--navy);outline-offset:2px}
 strong{font-weight:bold}
 h1,h2,h3,h4,h5,h6{color:var(--navy)}
 
+/* Navigation between the personal homepage, blog and Sketchbook. */
+.site-header{max-width:992px;width:calc(100% - 48px);margin:48px auto 0;padding-bottom:16px;
+  border-bottom:2px solid var(--rule);display:flex;align-items:center;justify-content:space-between;gap:24px}
+.site-home{font-weight:bold;font-size:20px;text-decoration:none}
+.site-header nav{display:flex;align-items:center;flex-wrap:wrap;gap:12px 24px;font:14px var(--mono)}
+.site-header a{padding:6px 0}
+.site-header [aria-current]{color:var(--navy);text-decoration-thickness:2px}
+@media(max-width:640px){.site-header{width:calc(100% - 32px);margin-top:28px;align-items:flex-start;flex-direction:column;gap:8px}.site-header nav{gap:12px 20px}}
+
 /* ---- shared ---- */
 .eyebrow{font:15px var(--mono);letter-spacing:.02em;color:var(--muted);margin-bottom:4px;display:block}
 .tags{margin:0 0 6px}

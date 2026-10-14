@@ -161,6 +161,14 @@ def notebook_body(nb_path: pathlib.Path) -> str:
     return "\n".join(c for c in chunks if c)
 
 # ---------------------------------------------------------------- HTML shells
+def site_navigation(is_index):
+    current = "page" if is_index else "location"
+    return f'''<header class="site-header">
+  <a class="site-home" href="/" aria-label="Home — Yassine Alouini">Yassine Alouini</a>
+  <nav aria-label="Main navigation"><a href="/">Home</a><a href="/blog/" aria-current="{current}">Blog</a><a href="/sketches/">Sketchbook</a><a href="https://github.com/yassineAlouini">GitHub</a></nav>
+</header>'''
+
+
 def page_shell(title, head_extra, body, rel="../", description=""):
     return f"""<!DOCTYPE html>
 <html lang="en"><head>
@@ -172,6 +180,7 @@ def page_shell(title, head_extra, body, rel="../", description=""):
 {head_extra}
 </head><body>
 <a class="skip-link" href="#main-content">Skip to content</a>
+{site_navigation(is_index=rel == "")}
 {body}
 </body></html>"""
 
@@ -191,7 +200,7 @@ def write_post(slug, title, subtitle, tags, body_inner, source_html="", note_htm
         title_html = (f'<div class="post-title-row">{title_html}'
                       f'<time datetime="{date.isoformat()}">{date:%d %B %Y}</time></div>')
     body = f"""
-<a class="back" href="../index.html">← All posts</a>
+<a class="back" href="/">← Home</a>
 <main id="main-content" tabindex="-1">
 <article>
   <header class="post-head">
