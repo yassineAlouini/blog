@@ -144,3 +144,7 @@ blog index and posts visually consistent. `site_navigation()` in `build.py`
 uses the same Home / Blog / Sketchbook / GitHub order as the personal site.
 For a local preview including that stylesheet and those destinations, run
 `python3 code/serve.py` from the adjacent `yassineAlouini.github.io` repository.
+
+The “Get the book” link uses the same open-book SVG, wording, destination and
+plain-link styling as the personal homepage. Keep `.book-link` / `.book-icon`
+styles and the SVG in `build.py` aligned with that repository.

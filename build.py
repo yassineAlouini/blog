@@ -283,8 +283,8 @@ def build_index():
                      + f'  <div class="grid">{cards}</div>\n</section>\n')
     book = "here" if BOOK_URL == "#" else f'<a href="{BOOK_URL}">here</a>'
     book_cta = "" if BOOK_URL == "#" else (
-        f'<a class="book-cta" href="{BOOK_URL}" target="_blank" rel="noopener">'
-        '📘 Get the book <span aria-hidden="true">→</span></a>')
+        f'<a class="book-link book-cta" href="{BOOK_URL}">'
+        '<svg class="book-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 6C9 3 5 3 2 4v15c4-1 7-1 10 2 3-3 6-3 10-2V4c-3-1-7-1-10 2Zm0 0v15M5 8c2 0 3 0 4 1M5 12c2 0 3 0 4 1M15 9c1-1 2-1 4-1M15 13c1-1 2-1 4-1"/></svg>Get the book</a>')
     body = f"""
 <header class="hero">
   <div class="hero-inner">
