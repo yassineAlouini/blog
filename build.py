@@ -67,9 +67,10 @@ BOOK_URL = "https://alouinimohamedyass.gumroad.com/l/computer_vision_with_pytorc
 MD_POSTS = [
     dict(slug="lecun-world-models",
          category="Computer Vision",
-         title="LeCun's World Models: JEPA, LeJEPA & LeWorldModel",
+         title="LeCun's World Models: JEPA, LeJEPA, LeWorldModel & H-JEPA",
          subtitle="A technical walkthrough of the JEPA world-model line — the maths, "
-                  "a PyTorch reconstruction, and the AMI Labs startup.",
+                  "a PyTorch reconstruction, H-JEPA's hierarchy, theory and planning results.",
+         updated_on="2026-10-16",
          tags=["WIP", "World Models", "JEPA", "Research"],
          src="_static/lecun-world-models.md",
          source=("https://arxiv.org/abs/2603.19312", "▶ LeWorldModel on arXiv"),
@@ -193,13 +194,14 @@ def tag_span(t):
     cls = "tag tag--wip" if t.strip().lower() == "wip" else "tag"
     return f'<span class="{cls}">{html.escape(t)}</span>'
 
-def write_post(slug, title, subtitle, tags, body_inner, source_html="", note_html="", foot_html="", published_on=""):
+def write_post(slug, title, subtitle, tags, body_inner, source_html="", note_html="", foot_html="", published_on="", updated_on=""):
     tags_html = "".join(tag_span(t) for t in tags)
     title_html = f'<h1>{html.escape(title)}</h1>'
-    if published_on:
-        date = datetime.date.fromisoformat(published_on)
+    if updated_on or published_on:
+        date = datetime.date.fromisoformat(updated_on or published_on)
+        label = "Updated " if updated_on else ""
         title_html = (f'<div class="post-title-row">{title_html}'
-                      f'<time datetime="{date.isoformat()}">{date:%d %B %Y}</time></div>')
+                      f'<time datetime="{date.isoformat()}">{label}{date:%d %B %Y}</time></div>')
     body = f"""
 <a class="back" href="/">← Home</a>
 <main id="main-content" tabindex="-1">
@@ -239,12 +241,17 @@ def build_md_post(p):
         url, label = p["source"]
         src_html = f'<p class="source-link"><a href="{html.escape(url)}" target="_blank" rel="noopener">{html.escape(label)}</a></p>'
     write_post(p["slug"], p["title"], p["subtitle"], p["tags"], body_inner,
-               source_html=src_html, foot_html=p.get("foot", ""))
+               source_html=src_html, foot_html=p.get("foot", ""),
+               updated_on=p.get("updated_on", ""))
 
-def card(title, subtitle, tags, href):
+def card(title, subtitle, tags, href, updated_on=""):
+    date_html = ""
+    if updated_on:
+        date = datetime.date.fromisoformat(updated_on)
+        date_html = f'<time datetime="{date.isoformat()}">Updated {date:%d %B %Y}</time>'
     chips = "".join(tag_span(t) for t in tags)
     return f"""<a class="card" href="{html.escape(href)}">
-  <div class="tags">{chips}</div>
+  <div class="tags">{chips}{date_html}</div>
   <h3>{html.escape(title)}</h3>
   <p>{html.escape(subtitle)}</p>
 </a>"""
@@ -252,7 +259,8 @@ def card(title, subtitle, tags, href):
 def build_index():
     # gather every item with its category/categories
     items = [dict(title=p["title"], subtitle=p["subtitle"], tags=p["tags"],
-                  href=f"posts/{p['slug']}.html", category=p["category"])
+                  href=f"posts/{p['slug']}.html", category=p["category"],
+                  updated_on=p.get("updated_on", ""))
              for p in POSTS + MD_POSTS]
     def cats(it):
         c = it["category"]
@@ -265,7 +273,7 @@ def build_index():
         sec_items = [it for it in items if sec in cats(it)]
         if not sec_items:
             continue
-        cards = "".join(card(it["title"], it["subtitle"], it["tags"], it["href"])
+        cards = "".join(card(it["title"], it["subtitle"], it["tags"], it["href"], it["updated_on"])
                         for it in sec_items)
         blurb = SECTION_BLURB.get(sec, "")
         section_id = f"topic-{index + 1}"

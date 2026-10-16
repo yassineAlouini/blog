@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>LeCun&#x27;s World Models: JEPA, LeJEPA &amp; LeWorldModel</title>
-<meta name="description" content="A technical walkthrough of the JEPA world-model line — the maths, a PyTorch reconstruction, and the AMI Labs startup.">
+<title>LeCun&#x27;s World Models: JEPA, LeJEPA, LeWorldModel &amp; H-JEPA</title>
+<meta name="description" content="A technical walkthrough of the JEPA world-model line — the maths, a PyTorch reconstruction, H-JEPA&#x27;s hierarchy, theory and planning results.">
 <link rel="stylesheet" href="../assets/style.css?v=shared-navigation-2">
 <link rel="stylesheet" href="../assets/pygments.css">
 <link rel="stylesheet" href="/assets/site-navigation.css?v=1">
@@ -20,16 +20,17 @@
 <article>
   <header class="post-head">
     <div class="tags"><span class="tag tag--wip">WIP</span><span class="tag">World Models</span><span class="tag">JEPA</span><span class="tag">Research</span></div>
-    <h1>LeCun&#x27;s World Models: JEPA, LeJEPA &amp; LeWorldModel</h1>
-    <p class="subtitle">A technical walkthrough of the JEPA world-model line — the maths, a PyTorch reconstruction, and the AMI Labs startup.</p>
+    <div class="post-title-row"><h1>LeCun&#x27;s World Models: JEPA, LeJEPA, LeWorldModel &amp; H-JEPA</h1><time datetime="2026-10-16">Updated 16 October 2026</time></div>
+    <p class="subtitle">A technical walkthrough of the JEPA world-model line — the maths, a PyTorch reconstruction, H-JEPA&#x27;s hierarchy, theory and planning results.</p>
     <p class="source-link"><a href="https://arxiv.org/abs/2603.19312" target="_blank" rel="noopener">▶ LeWorldModel on arXiv</a></p>
   </header>
   
-  <div class="nb"><div class="md"><p>There are <strong>three distinct but tightly linked artifacts</strong> people lump together as &quot;LeCun's world model&quot;:</p>
+  <div class="nb"><div class="md"><p>There are <strong>four distinct but tightly linked artifacts</strong> people lump together as &quot;LeCun's world model&quot;:</p>
 <ul>
 <li><strong>LeJEPA</strong> (Balestriero &amp; LeCun, Nov 2025, <a href="https://arxiv.org/abs/2511.08544">arXiv 2511.08544</a>) — the self-supervised <em>representation learning</em> theory + method.</li>
 <li><strong>LeWorldModel / LeWM</strong> (Maes, Le Lidec, Scieur, LeCun, Balestriero, Mar 2026, <a href="https://arxiv.org/abs/2603.19312">arXiv 2603.19312</a>) — the actual <strong>world model</strong> that puts LeJEPA's principle into an action-conditioned predictor trained from pixels.</li>
 <li><strong>&quot;When Does LeJEPA Learn a World Model?&quot;</strong> (May 2026, <a href="https://arxiv.org/html/2605.26379v1">arXiv 2605.26379</a>) — the identifiability theory proving <em>when</em> the recovered latents are the true ones.</li>
+<li><strong>H-JEPA</strong> (Zhang, Terver, Rabbat, LeCun &amp; Balestriero, 5 October 2026, <a href="https://arxiv.org/abs/2610.06805v1">arXiv 2610.06805v1</a>) — hierarchical prediction and planning across learned latent spaces.</li>
 </ul>
 <p>These come out of LeCun's research circle around his post-Meta startup, <strong>AMI Labs (Advanced Machine Intelligence)</strong>.</p>
 <h3>Why a world model, not an LLM</h3>
@@ -120,7 +121,7 @@
 </tr>
 </tbody>
 </table>
-<p>All of these are <em>heuristic</em>. LeCun's 2025–26 line removes the heuristics and replaces them with a single principled regularizer.</p>
+<p>LeJEPA and LeWM replace several stabilization heuristics with a principled regularizer, SIGReg. H-JEPA qualifies this story: a non-collapsed embedding distribution can still discard the agent, requiring an additional action-sensitive objective on diverse scenes (see below).</p>
 <h3>LeJEPA: making it provable</h3>
 <p>Key theoretical claim: <strong>the isotropic Gaussian is the unique embedding distribution that minimizes worst-case downstream prediction risk.</strong> If you don't know the downstream task, the optimal thing your embeddings can do is be distributed as <span class="math">\(\mathcal N(0, I)\)</span> — maximally spread, no privileged directions, no collapse.</p>
 <p>So instead of <em>ad hoc</em> variance/covariance terms, you directly regularize toward isotropic Gaussian via <strong>SIGReg (Sketched Isotropic Gaussian Regularization)</strong>: draw random unit directions and project embeddings onto each (a distribution is isotropic Gaussian iff every 1-D projection is standard Gaussian — Cramér–Wold); then test each projection against <span class="math">\(\mathcal N(0,1)\)</span> with a characteristic-function goodness-of-fit statistic (Epps–Pulley):</p>
@@ -190,8 +191,63 @@
 <blockquote>
 <p><strong>Honest limitation:</strong> the guarantees hold under Gaussian latents + OU dynamics + good exploration, and only for the <strong>encoder</strong> — not the action-conditioned predictor. So &quot;LeWM provably learns the true world model&quot; is <strong>not</strong> yet established; the dynamics side remains empirical.</p>
 </blockquote>
+<h3>H-JEPA: a hierarchy for long-horizon planning</h3>
+<p><strong>October 2026 update.</strong> <a href="https://arxiv.org/abs/2610.06805v1">H-JEPA: End-to-End Learning of Hierarchical World Models for Visual Planning</a>, by <strong>Wancong Zhang, Basile Terver, Michael Rabbat, Yann LeCun and Randall Balestriero</strong>, extends LeWM beyond a single prediction timescale.</p>
+<h4>Summary: predict and plan at different scales</h4>
+<p>Each level learns its own latent space, action encoder and predictor; upper objectives backpropagate through lower encoders. Longer horizons can discard leg-pose detail while retaining maze position. This selective abstraction depends on separated timescales; manipulation datasets show less of it. Planning descends from goal to latent subgoals to primitive actions. Lower planners compare predictions with subgoals in the upper latent space. See the <a href="https://h-jepa.com/#predictive-learning">authors' method overview</a>.</p>
+<figure class="figure">
+<img src="../assets/hjepa-hierarchy.svg" width="640" height="520" loading="lazy" alt="Three-level H-JEPA planning: level 3 supplies a latent subgoal to level 2, then level 1 produces primitive actions. Higher levels use progressively longer strides.">
+<figcaption class="cap">Schematic of top-down planning, with stride 2 between levels. Training learns the encoders jointly; planning refines predicted subgoals. Based on the <a href="https://h-jepa.com/#hierarchical-planning">authors' planning overview</a>.</figcaption>
+</figure>
+
+<h4>Main theoretical contributions</h4>
+<p><a href="https://arxiv.org/html/2610.06805v1#A12">Appendix L</a> formalizes <strong>slow-feature collapse</strong>:</p>
+<ul>
+<li><strong>Proposition 1:</strong> with a readable, episode-constant background having an atomless distribution, an encoder can satisfy a marginal regularizer while ignoring motion; an identity predictor achieves zero prediction error.</li>
+<li><strong>Theorem 1:</strong> optimal squared prediction error is bounded below by innovation variance. Zero error requires embeddings to evolve deterministically given their current state and action. Background-only codes qualify; the theorem does not select useful features among zero-loss solutions.</li>
+<li><strong>Proposition 3:</strong> collapsed codes incur inverse-dynamics error at least equal to residual action variance given background, normalized by action dimension. It equals one for unit-variance actions unpredictable from background.</li>
+</ul>
+<p>Thus SIGReg can preserve distributional diversity without preserving control information. Inverse dynamics predicts actions from consecutive latents, adding a temporal constraint; it does not guarantee distractor removal or physical-robot success. The timescale-abstraction findings are empirical, not universal identifiability guarantees.</p>
+<h4>Practical results</h4>
+<table>
+<thead>
+<tr>
+  <th>Evaluation</th>
+  <th>Reported result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>Visual AntMaze</td>
+  <td>Flat LeWM: <strong>18.0%</strong>; three-level H-JEPA: <strong>73.3%</strong> success (<strong>+55.3 percentage points</strong>).</td>
+</tr>
+<tr>
+  <td>FourRoom, AntMaze, Cube</td>
+  <td>Up to three levels improve the success–planner-compute frontier.</td>
+</tr>
+<tr>
+  <td>Push-T</td>
+  <td>Two levels help; deeper hierarchies deteriorate, plausibly because short episodes reduce usable training data.</td>
+</tr>
+<tr>
+  <td>DROID videos</td>
+  <td><strong>33.57 ± 1.52%</strong> fidelity for LeWM + inverse dynamics; <strong>38.42 ± 0.94%</strong> for two-level H-JEPA. The compute sweep also favors hierarchy.</td>
+</tr>
+</tbody>
+</table>
+<figure class="figure">
+<img src="../assets/hjepa-antmaze-results.svg" width="640" height="330" loading="lazy" alt="AntMaze success: flat LeWM 18.0% versus three-level H-JEPA 73.3%; each has standard error 3.5 percentage points. Fifty tasks, three paired seeds.">
+<figcaption class="cap">AntMaze success, mean ± standard error: 18.0 ± 3.5% versus 73.3 ± 3.5%. Redrawn from the <a href="https://github.com/kevinghst/H-JEPA/blob/main/docs/RESULTS.md">official reported results</a>; these are success rates, not a fixed-compute speedup.</figcaption>
+</figure>
+
+<p>AntMaze uses 50 start–goal tasks; figures aggregate three paired training/planner seeds. Sources: <a href="https://github.com/kevinghst/H-JEPA/blob/main/docs/RESULTS.md">official evaluation protocol and results</a>, <a href="https://h-jepa.com/#results">authors' results overview</a>.</p>
+<p>Ablations separate <strong>abstract goal costs</strong> from <strong>temporal decomposition</strong>: projecting a flat rollout into an upper latent can help on its own; subgoal planning adds another benefit. DROID measures <strong>Fréchet fidelity of end-effector paths</strong>, not closed-loop task success: stationary is 0%, expert is 100%. Frozen-encoder references use 1 fps versus H-JEPA's 5 fps, limiting direct comparison. See the <a href="https://h-jepa.com/#droid">project's DROID discussion</a>.</p>
+<h4>Trying it</h4>
+<p>The <a href="https://github.com/kevinghst/H-JEPA">official repository</a> releases training, planning, probes and reproduction scripts, plus <a href="https://huggingface.co/jepa-world-models/h-jepa">checkpoints</a>. After installation and dataset/task preparation, run from <code>h_jepa/</code>:</p>
+<div class="code-cell"><pre class="highlight"><code>python<span class="w"> </span>main_hjepa.py<span class="w"> </span>--config-name<span class="w"> </span>ant_hjepa_l3<span class="w"> </span><span class="nv">seed</span><span class="o">=</span><span class="m">42</span>
+</code></pre></div><p>Training includes planning evaluation. Downloaded checkpoints allow evaluation without retraining; DROID evaluation needs only the released clips and models. These are the authors' results, not experiments reproduced for this post.</p>
 <h3>Relation to other work</h3>
-<p>Direct ancestry (LeCun's own line): I-JEPA → V-JEPA / V-JEPA 2 → LeJEPA → LeWorldModel — &quot;remove every heuristic.&quot;</p>
+<p>Direct ancestry (LeCun's own line): I-JEPA → V-JEPA / V-JEPA 2 → LeJEPA → LeWorldModel → H-JEPA — from representation regularization to action-conditioned dynamics and hierarchical planning.</p>
 <table>
 <thead>
 <tr>
@@ -227,14 +283,20 @@
 <p><strong>AMI Labs (Advanced Machine Intelligence)</strong>, founded by LeCun after leaving Meta, raised a <strong>~$1.03B seed round</strong> (announced ~March 2026) — among the largest AI seed rounds ever, on an explicit thesis: build <strong>world models</strong>, a contrarian bet <em>against</em> LLMs as the path to human-level intelligence. Critical coverage stresses that the funding-round framing oversells novelty — the theory only guarantees encoder-side recovery under idealized assumptions, and the world-model dynamics side remains empirical.</p>
 <h3>Sources</h3>
 <ul>
-<li><a href="https://arxiv.org/abs/2603.19312">LeWorldModel — arXiv 2603.19312</a> · <a href="https://le-wm.github.io/">project page</a></li>
-<li><a href="https://arxiv.org/abs/2511.08544">LeJEPA — arXiv 2511.08544</a> · <a href="https://github.com/rbalestr-lab/lejepa">code (rbalestr-lab/lejepa)</a></li>
-<li><a href="https://arxiv.org/html/2605.26379v1">When Does LeJEPA Learn a World Model? — arXiv 2605.26379</a></li>
-<li><a href="https://ai.meta.com/blog/yann-lecun-ai-model-i-jepa/">I-JEPA (Meta AI blog)</a> · <a href="https://techcrunch.com/2026/01/23/whos-behind-ami-labs-yann-lecuns-world-model-startup/">AMI Labs — TechCrunch</a></li>
+<li><p><a href="https://arxiv.org/abs/2610.06805v1">H-JEPA — arXiv 2610.06805v1 (5 October 2026)</a> · <a href="https://h-jepa.com/">project</a> · <a href="https://github.com/kevinghst/H-JEPA">official code</a></p>
+</li>
+<li><p><a href="https://arxiv.org/abs/2603.19312">LeWorldModel — arXiv 2603.19312</a> · <a href="https://le-wm.github.io/">project page</a></p>
+</li>
+<li><p><a href="https://arxiv.org/abs/2511.08544">LeJEPA — arXiv 2511.08544</a> · <a href="https://github.com/rbalestr-lab/lejepa">code (rbalestr-lab/lejepa)</a></p>
+</li>
+<li><p><a href="https://arxiv.org/html/2605.26379v1">When Does LeJEPA Learn a World Model? — arXiv 2605.26379</a></p>
+</li>
+<li><p><a href="https://ai.meta.com/blog/yann-lecun-ai-model-i-jepa/">I-JEPA (Meta AI blog)</a> · <a href="https://techcrunch.com/2026/01/23/whos-behind-ami-labs-yann-lecuns-world-model-startup/">AMI Labs — TechCrunch</a></p>
+</li>
 </ul>
 </div></div>
 </article>
 </main>
-<footer class="post-foot">Research digest compiled from arXiv and press sources · built 2026-10-09</footer>
+<footer class="post-foot">Research digest compiled from arXiv and press sources · built 2026-10-16</footer>
 
 </body></html>
