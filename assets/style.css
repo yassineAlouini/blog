@@ -76,6 +76,7 @@ article>.note{margin:20px 24px}  /* line up with the post text */
 .card h3{font:bold 24px/1.15 var(--serif);margin:6px 0 8px;color:var(--link);text-decoration:underline;
   text-underline-offset:2px}
 .card:visited h3{color:var(--visited)}
+.card time{font-size:14px;color:var(--muted);white-space:nowrap}
 .card p{margin:0;font-size:18px;color:var(--muted)}
 .card:hover{background:var(--paper-2);color:var(--ink)}
 .card:focus-visible{position:relative;z-index:1;outline-offset:-4px;background:var(--paper-2)}

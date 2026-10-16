@@ -1,8 +1,9 @@
-There are **three distinct but tightly linked artifacts** people lump together as "LeCun's world model":
+There are **four distinct but tightly linked artifacts** people lump together as "LeCun's world model":
 
 - **LeJEPA** (Balestriero & LeCun, Nov 2025, [arXiv 2511.08544](https://arxiv.org/abs/2511.08544)) — the self-supervised *representation learning* theory + method.
 - **LeWorldModel / LeWM** (Maes, Le Lidec, Scieur, LeCun, Balestriero, Mar 2026, [arXiv 2603.19312](https://arxiv.org/abs/2603.19312)) — the actual **world model** that puts LeJEPA's principle into an action-conditioned predictor trained from pixels.
 - **"When Does LeJEPA Learn a World Model?"** (May 2026, [arXiv 2605.26379](https://arxiv.org/html/2605.26379v1)) — the identifiability theory proving *when* the recovered latents are the true ones.
+- **H-JEPA** (Zhang, Terver, Rabbat, LeCun & Balestriero, 5 October 2026, [arXiv 2610.06805v1](https://arxiv.org/abs/2610.06805v1)) — hierarchical prediction and planning across learned latent spaces.
 
 These come out of LeCun's research circle around his post-Meta startup, **AMI Labs (Advanced Machine Intelligence)**.
 
@@ -75,7 +76,7 @@ This is an **energy-based model**: low energy = "these go together," and in the 
 | V-JEPA / V-JEPA 2 (2024–25) | Masked spatiotemporal prediction, scaled to video |
 | DINO-WM (2024) | Frozen pre-trained DINO features as the latent space |
 
-All of these are *heuristic*. LeCun's 2025–26 line removes the heuristics and replaces them with a single principled regularizer.
+LeJEPA and LeWM replace several stabilization heuristics with a principled regularizer, SIGReg. H-JEPA qualifies this story: a non-collapsed embedding distribution can still discard the agent, requiring an additional action-sensitive objective on diverse scenes (see below).
 
 ## LeJEPA: making it provable
 
@@ -162,9 +163,60 @@ The theory paper (arXiv 2605.26379) answers *when the recovered latents are the 
 
 > **Honest limitation:** the guarantees hold under Gaussian latents + OU dynamics + good exploration, and only for the **encoder** — not the action-conditioned predictor. So "LeWM provably learns the true world model" is **not** yet established; the dynamics side remains empirical.
 
+## H-JEPA: a hierarchy for long-horizon planning
+
+**October 2026 update.** [H-JEPA: End-to-End Learning of Hierarchical World Models for Visual Planning](https://arxiv.org/abs/2610.06805v1), by **Wancong Zhang, Basile Terver, Michael Rabbat, Yann LeCun and Randall Balestriero**, extends LeWM beyond a single prediction timescale.
+
+### Summary: predict and plan at different scales
+
+Each level learns its own latent space, action encoder and predictor; upper objectives backpropagate through lower encoders. Longer horizons can discard leg-pose detail while retaining maze position. This selective abstraction depends on separated timescales; manipulation datasets show less of it. Planning descends from goal to latent subgoals to primitive actions. Lower planners compare predictions with subgoals in the upper latent space. See the [authors' method overview](https://h-jepa.com/#predictive-learning).
+
+<figure class="figure">
+<img src="../assets/hjepa-hierarchy.svg" width="640" height="520" loading="lazy" alt="Three-level H-JEPA planning: level 3 supplies a latent subgoal to level 2, then level 1 produces primitive actions. Higher levels use progressively longer strides.">
+<figcaption class="cap">Schematic of top-down planning, with stride 2 between levels. Training learns the encoders jointly; planning refines predicted subgoals. Based on the <a href="https://h-jepa.com/#hierarchical-planning">authors' planning overview</a>.</figcaption>
+</figure>
+
+### Main theoretical contributions
+
+[Appendix L](https://arxiv.org/html/2610.06805v1#A12) formalizes **slow-feature collapse**:
+
+- **Proposition 1:** with a readable, episode-constant background having an atomless distribution, an encoder can satisfy a marginal regularizer while ignoring motion; an identity predictor achieves zero prediction error.
+- **Theorem 1:** optimal squared prediction error is bounded below by innovation variance. Zero error requires embeddings to evolve deterministically given their current state and action. Background-only codes qualify; the theorem does not select useful features among zero-loss solutions.
+- **Proposition 3:** collapsed codes incur inverse-dynamics error at least equal to residual action variance given background, normalized by action dimension. It equals one for unit-variance actions unpredictable from background.
+
+Thus SIGReg can preserve distributional diversity without preserving control information. Inverse dynamics predicts actions from consecutive latents, adding a temporal constraint; it does not guarantee distractor removal or physical-robot success. The timescale-abstraction findings are empirical, not universal identifiability guarantees.
+
+### Practical results
+
+| Evaluation | Reported result |
+|---|---|
+| Visual AntMaze | Flat LeWM: **18.0%**; three-level H-JEPA: **73.3%** success (**+55.3 percentage points**). |
+| FourRoom, AntMaze, Cube | Up to three levels improve the success–planner-compute frontier. |
+| Push-T | Two levels help; deeper hierarchies deteriorate, plausibly because short episodes reduce usable training data. |
+| DROID videos | **33.57 ± 1.52%** fidelity for LeWM + inverse dynamics; **38.42 ± 0.94%** for two-level H-JEPA. The compute sweep also favors hierarchy. |
+
+<figure class="figure">
+<img src="../assets/hjepa-antmaze-results.svg" width="640" height="330" loading="lazy" alt="AntMaze success: flat LeWM 18.0% versus three-level H-JEPA 73.3%; each has standard error 3.5 percentage points. Fifty tasks, three paired seeds.">
+<figcaption class="cap">AntMaze success, mean ± standard error: 18.0 ± 3.5% versus 73.3 ± 3.5%. Redrawn from the <a href="https://github.com/kevinghst/H-JEPA/blob/main/docs/RESULTS.md">official reported results</a>; these are success rates, not a fixed-compute speedup.</figcaption>
+</figure>
+
+AntMaze uses 50 start–goal tasks; figures aggregate three paired training/planner seeds. Sources: [official evaluation protocol and results](https://github.com/kevinghst/H-JEPA/blob/main/docs/RESULTS.md), [authors' results overview](https://h-jepa.com/#results).
+
+Ablations separate **abstract goal costs** from **temporal decomposition**: projecting a flat rollout into an upper latent can help on its own; subgoal planning adds another benefit. DROID measures **Fréchet fidelity of end-effector paths**, not closed-loop task success: stationary is 0%, expert is 100%. Frozen-encoder references use 1 fps versus H-JEPA's 5 fps, limiting direct comparison. See the [project's DROID discussion](https://h-jepa.com/#droid).
+
+### Trying it
+
+The [official repository](https://github.com/kevinghst/H-JEPA) releases training, planning, probes and reproduction scripts, plus [checkpoints](https://huggingface.co/jepa-world-models/h-jepa). After installation and dataset/task preparation, run from `h_jepa/`:
+
+```bash
+python main_hjepa.py --config-name ant_hjepa_l3 seed=42
+```
+
+Training includes planning evaluation. Downloaded checkpoints allow evaluation without retraining; DROID evaluation needs only the released clips and models. These are the authors' results, not experiments reproduced for this post.
+
 ## Relation to other work
 
-Direct ancestry (LeCun's own line): I-JEPA → V-JEPA / V-JEPA 2 → LeJEPA → LeWorldModel — "remove every heuristic."
+Direct ancestry (LeCun's own line): I-JEPA → V-JEPA / V-JEPA 2 → LeJEPA → LeWorldModel → H-JEPA — from representation regularization to action-conditioned dynamics and hierarchical planning.
 
 | Work | Relation |
 |---|---|
@@ -181,6 +233,8 @@ The unifying contrast: **predict-in-latent + distributional regularizer (LeCun c
 **AMI Labs (Advanced Machine Intelligence)**, founded by LeCun after leaving Meta, raised a **~$1.03B seed round** (announced ~March 2026) — among the largest AI seed rounds ever, on an explicit thesis: build **world models**, a contrarian bet *against* LLMs as the path to human-level intelligence. Critical coverage stresses that the funding-round framing oversells novelty — the theory only guarantees encoder-side recovery under idealized assumptions, and the world-model dynamics side remains empirical.
 
 ## Sources
+
+- [H-JEPA — arXiv 2610.06805v1 (5 October 2026)](https://arxiv.org/abs/2610.06805v1) · [project](https://h-jepa.com/) · [official code](https://github.com/kevinghst/H-JEPA)
 
 - [LeWorldModel — arXiv 2603.19312](https://arxiv.org/abs/2603.19312) · [project page](https://le-wm.github.io/)
 - [LeJEPA — arXiv 2511.08544](https://arxiv.org/abs/2511.08544) · [code (rbalestr-lab/lejepa)](https://github.com/rbalestr-lab/lejepa)

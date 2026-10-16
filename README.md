@@ -37,9 +37,9 @@ renderer as the other section icons.
 - **[EfficientDet meets PyTorch Lightning](posts/efficientdet-meets-pytorch-lightning.html)** —
   object detection with EfficientDet wrapped in a clean Lightning training loop.
   ([Kaggle](https://www.kaggle.com/code/yassinealouini/efficientdet-meets-pytorch-lightning))
-- **[LeCun's World Models: JEPA, LeJEPA & LeWorldModel](posts/lecun-world-models.html)** — **WIP**;
+- **[LeCun's World Models: JEPA, LeJEPA, LeWorldModel & H-JEPA](posts/lecun-world-models.html)** — **WIP**, updated **16 October 2026**;
   a technical walkthrough of the JEPA world-model line, the maths, a PyTorch reconstruction,
-  and the AMI Labs startup.
+  and H-JEPA's hierarchy, theoretical contributions and planning results.
 
 ### 🎬 Video Processing
 *Working with video — codecs, frames, and the preprocessing plumbing.*
@@ -118,7 +118,8 @@ reader's own system fonts).
 **As a hand-written article:**
 1. Write `_static/<slug>.md`.
 2. Add an entry to the `MD_POSTS` list in `build.py` (same fields, plus `src` pointing
-   at the markdown file and an optional `source` link).
+   at the markdown file and an optional `source` link). Set `updated_on` to an ISO date
+   (`YYYY-MM-DD`) to show an update date beside the post title and on its index card.
 
 `category` is one of `"Computer Vision"`, `"Video Processing"`, `"NLP & LLMs"`, `"Research"`, …
 (or a **list** of them to cross-list). New sections appear automatically; empty ones are skipped.

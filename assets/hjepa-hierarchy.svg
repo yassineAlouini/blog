@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 520" role="img" aria-labelledby="title desc">
+<title id="title">H-JEPA plans from coarse goals to primitive actions</title>
+<desc id="desc">The goal observation guides level 3, which predicts in its own latent space at four times the level-1 stride. Its first predicted state becomes a level-2 subgoal. Level 2 uses twice the level-1 stride and passes a subgoal to level 1, which produces primitive actions. Each stride multiplier is relative to level 1.</desc>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10Z" fill="#142d4e"/></marker></defs>
+<rect width="640" height="520" fill="white"/>
+<g font-family="Georgia,serif" text-anchor="middle" fill="#142d4e">
+<text x="320" y="32" font-size="25" font-weight="bold">Plan from coarse to fine</text>
+<text x="320" y="60" font-size="18">Goal observation encoded at every level</text>
+<rect x="40" y="80" width="560" height="82" fill="#f3eddd" stroke="#142d4e"/>
+<text x="320" y="113" font-size="25" font-weight="bold">Level 3 · long horizon</text>
+<text x="320" y="143" font-size="20">Own latent space · 4× level-1 stride</text>
+<path d="M320 163V208" stroke="#142d4e" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="440" y="192" font-size="18">latent subgoal</text>
+<rect x="40" y="215" width="560" height="82" fill="#f8f6ef" stroke="#142d4e"/>
+<text x="320" y="248" font-size="25" font-weight="bold">Level 2 · intermediate horizon</text>
+<text x="320" y="278" font-size="20">Own latent space · 2× level-1 stride</text>
+<path d="M320 298V343" stroke="#142d4e" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="440" y="327" font-size="18">latent subgoal</text>
+<rect x="40" y="350" width="560" height="82" fill="white" stroke="#142d4e"/>
+<text x="320" y="383" font-size="25" font-weight="bold">Level 1 · short horizon</text>
+<text x="320" y="413" font-size="20">Fine control in the level-1 latent space</text>
+<path d="M320 433V478" stroke="#142d4e" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="320" y="507" font-size="23" font-weight="bold">Execute primitive actions → observe → replan</text>
+</g></svg>

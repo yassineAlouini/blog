@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 330" role="img" aria-labelledby="title desc">
+<title id="title">Visual AntMaze success: flat LeWM versus three-level H-JEPA</title>
+<desc id="desc">Horizontal bars on a zero-to-one-hundred-percent scale show LeWM at 18.0 percent and H-JEPA with three levels at 73.3 percent. Whiskers show plus or minus one standard error, 3.5 percentage points for each model. Fifty tasks, three paired training and planning seeds. The improvement is 55.3 percentage points.</desc>
+<rect width="640" height="330" fill="white"/>
+<g font-family="Georgia,serif" fill="#142d4e">
+<text x="320" y="35" font-size="25" font-weight="bold" text-anchor="middle">Visual AntMaze · planning success</text>
+<g stroke="#e3dfd3"><path d="M190 65V235M290 65V235M390 65V235M490 65V235M590 65V235"/></g>
+<text x="170" y="110" font-size="21" text-anchor="end">Flat LeWM</text>
+<text x="170" y="190" font-size="21" text-anchor="end">H-JEPA · 3 levels</text>
+<rect x="190" y="85" width="72" height="36" fill="#747b84"/>
+<rect x="190" y="165" width="293.2" height="36" fill="#142d4e"/>
+<g stroke="#9a6a17" stroke-width="3"><path d="M248 103H276M248 94V112M276 94V112M469.2 183H497.2M469.2 174V192M497.2 174V192"/></g>
+<text x="290" y="111" font-size="23" font-weight="bold">18.0%</text>
+<text x="511" y="191" font-size="23" font-weight="bold">73.3%</text>
+<path d="M190 235H590" stroke="#142d4e"/>
+<g font-size="18" text-anchor="middle"><text x="190" y="260">0</text><text x="290" y="260">25</text><text x="390" y="260">50</text><text x="490" y="260">75</text><text x="590" y="260">100%</text></g>
+<text x="320" y="296" font-size="20" text-anchor="middle">+55.3 percentage points · whiskers: ±1 SE</text>
+<text x="320" y="321" font-size="17" text-anchor="middle">50 tasks · 3 paired model / planner seeds</text>
+</g></svg>
