@@ -16,9 +16,18 @@ The landing page (`index.html`) is organized into themed sections. Each post is 
 self-contained HTML page under `posts/` with the original narrative, math and code.
 Each section has a small pixel-art GIF: a segmentation scan for Computer Vision,
 a moving filmstrip for Video Processing, flowing tokens for NLP & LLMs, and a
-matrix with a spectrum histogram for Research. They share the navy and ochre
+random weight matrix feeding a neural network above a moving spectrum for Research. They share the navy and ochre
 palette. A single control pauses all four; reduced-motion preferences select
 static images even without JavaScript.
+
+The Research animation is a tiny “signal emerging from noise” experiment: a fixed,
+seeded 12×12 Gaussian weight matrix gains and loses a rank-one component. The
+blue histogram shows the remaining eigenvalues of WᵀW; a gold marker follows the
+largest eigenvalue as it separates from the bulk. Gold pulses cross a schematic
+network above it. The spectrum is computed from the toy matrix on every exported
+frame; the network and changing signal are illustrations, not a trained model or
+a claimed asymptotic law. The loop and its PNG still are exported by the same
+renderer as the other section icons.
 
 ### 🎨 Computer Vision
 *Segmentation, detection, and the metrics that score them.*
@@ -135,3 +144,7 @@ blog index and posts visually consistent. `site_navigation()` in `build.py`
 uses the same Home / Blog / Sketchbook / GitHub order as the personal site.
 For a local preview including that stylesheet and those destinations, run
 `python3 code/serve.py` from the adjacent `yassineAlouini.github.io` repository.
+
+The “Get the book” link uses the same open-book SVG, wording, destination and
+plain-link styling as the personal homepage. Keep `.book-link` / `.book-icon`
+styles and the SVG in `build.py` aligned with that repository.

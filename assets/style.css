@@ -47,10 +47,13 @@ article>.note{margin:20px 24px}  /* line up with the post text */
 .hero h1{font:bold clamp(38px,6vw,60px)/1.05 var(--serif);margin:4px 0 14px;letter-spacing:-.01em}
 .lede{font-size:23px;line-height:1.45;max-width:46em;margin:0}
 .lede.bio{margin-top:10px;font-size:20px;color:var(--muted)}
-.book-cta{display:inline-block;margin-top:18px;font:bold 19px var(--serif);color:var(--paper);
-  background:var(--navy);border:1px solid var(--navy);padding:9px 18px;text-decoration:none}
-.book-cta:visited{color:var(--paper)}
-.book-cta:hover{background:var(--paper);color:var(--navy)}
+.book-cta{margin-top:18px}
+.book-link{display:inline-flex;align-items:center;gap:8px;padding:6px 0;
+  font:19px/1.55 var(--serif);color:var(--link);text-decoration:underline;text-underline-offset:2px}
+.book-link:visited{color:var(--visited)}
+.book-link:hover{background:var(--navy);color:var(--paper);text-decoration:none}
+.book-icon{width:20px;height:20px;flex:none;fill:none;stroke:currentColor;
+  stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 .topic-nav{display:flex;flex-wrap:wrap;gap:4px 20px;margin-top:20px;font-size:17px}
 .topic-nav a{padding:6px 0}
 .grid-wrap{max-width:1040px;margin:0 auto;padding:6px 24px 50px}
