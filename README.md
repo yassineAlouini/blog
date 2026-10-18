@@ -55,6 +55,9 @@ renderer as the other section icons.
 
 ### 🔬 Research
 *Deeper dives and paper write-ups.*
+- **[Deep Learning Theory After Roberts, Yaida & Hanin](posts/deep-learning-theory-2026.html)** —
+  six advances in feature learning, scaling and optimization, with equations,
+  primary sources and a reading guide through the 2026 literature.
 
 ---
 

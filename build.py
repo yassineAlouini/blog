@@ -65,6 +65,16 @@ BOOK_URL = "https://alouinimohamedyass.gumroad.com/l/computer_vision_with_pytorc
 # posts authored as markdown (rendered through the same pipeline as notebooks).
 # `category` may be a string or a list — the card then appears in each section.
 MD_POSTS = [
+    dict(slug="deep-learning-theory-2026",
+         category="Research",
+         title="Deep Learning Theory After Roberts, Yaida & Hanin",
+         subtitle="Six advances in feature learning, scaling and optimization, "
+                  "with a reading guide from the book to the 2026 research frontier.",
+         updated_on="2026-10-18",
+         tags=["Deep Learning Theory", "Feature Learning", "Research"],
+         src="_static/deep-learning-theory-2026.md",
+         source=("https://arxiv.org/abs/2106.10165", "Read The Principles of Deep Learning Theory"),
+         foot='Research overview · literature checked 18 October 2026 · '),
     dict(slug="lecun-world-models",
          category="Computer Vision",
          title="LeCun's World Models: JEPA, LeJEPA, LeWorldModel & H-JEPA",
