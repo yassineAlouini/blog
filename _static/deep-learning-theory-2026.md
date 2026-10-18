@@ -52,8 +52,9 @@ K_t(x,x') = \nabla_\theta f_{\theta_t}(x)^\top
              \nabla_\theta f_{\theta_t}(x').
 $$
 
-With the squared loss $\mathcal{L}=\frac12\sum_j(f(x_j)-y_j)^2$ and gradient flow,
-the training predictions satisfy
+With the summed squared loss $\mathcal{L}=\frac12\sum_j(f(x_j)-y_j)^2$ and
+Euclidean gradient flow $\dot\theta=-\nabla_\theta\mathcal{L}$, the training
+predictions satisfy
 
 $$
 \frac{d f_t(x_i)}{dt}
@@ -63,7 +64,9 @@ $$
 This identity follows directly from the chain rule. Approximating $K_t$ by a
 fixed $K_0$ makes the dynamics much easier to solve. Understanding when that
 approximation fails, and how the kernel then evolves, is a central question in
-the next generation of theories.
+the next generation of theories. Averaging the loss over $P$ samples would add
+a factor of $1/P$ on the right-hand side; a preconditioned optimizer would change
+the kernel governing these dynamics.
 
 <h2 id="feature-dynamics">1. Following feature learning through time</h2>
 
@@ -112,6 +115,11 @@ deformations of the kernels and explicit first-order feature corrections. The
 large-depth, large-width and large-data limits do not generally commute.
 [Hanin and Zlokapa, PRL 136, 067301](https://doi.org/10.1103/xm8d-v66z).
 
+The [May 2024 preprint](https://arxiv.org/abs/2405.16630) is freely available under
+the title *Bayesian Inference with Deep Weakly Nonlinear Networks*. It describes
+the calculation as a physics-level perturbative analysis and states its data
+assumptions explicitly, including fewer training samples than input dimensions.
+
 **What advances beyond the book:** sample count joins architecture in determining
 the learning regime. This ratio is a result for the paper's shaped-network
 Bayesian setting, not a universal feature-learning threshold for SGD or Adam.
@@ -122,21 +130,26 @@ The choice of a large-network limit has practical consequences. **Maximal-update
 parameterization**, usually written $\mu$P, scales initialization and training
 hyperparameters with width so that feature updates remain meaningful. It also
 motivates tuning hyperparameters on smaller networks and transferring them to
-larger ones. The underlying infinite-width feature-learning construction dates
-to 2021.
-[Yang and Hu's research explanation](https://www.microsoft.com/en-us/research/blog/on-infinitely-wide-neural-networks-that-exhibit-feature-learning/).
+larger ones. Yang and Hu's underlying feature-learning construction appeared as
+a November 2020 preprint and at ICML 2021, so it predates the book's publication.
+[Feature Learning in Infinite-Width Neural Networks](https://arxiv.org/abs/2011.14522).
+The practical hyperparameter-transfer method was developed in
+[Tensor Programs V, 2022](https://arxiv.org/abs/2203.03466).
 
 Recent work asks how to preserve useful learning when **depth also changes**.
 In **CompleteP**, Dey and colleagues study a parameterization that combines
 depth-wise hyperparameter transfer with non-lazy learning in all layers: feature
 changes remain meaningfully nonlinear instead of staying close to a
-linearization. Their transformer experiments report 12–34% improvements in
-compute efficiency over the compared baselines.
+linearization. For models with about 1.5 billion non-embedding parameters, the
+authors report 11.8% and 34.4% FLOP savings over $\mu$P for an optimized model
+shape and a 179-layer model, respectively. These estimates use fitted
+loss-versus-compute curves; they are not measured wall-clock speedups.
 [Don't be lazy: CompleteP enables compute-efficient deep transformers, NeurIPS 2025](https://arxiv.org/abs/2505.01618).
 
 **Why this matters:** the theory suggests concrete training rules. The reported
-efficiency gains belong to the paper's experiments; they are not a guaranteed
-speedup for every architecture or hardware configuration.
+efficiency gains belong to the paper's experiments, which ran on Cerebras CS-3
+systems; they are not a guaranteed speedup for every architecture or hardware
+configuration.
 
 <h2 id="scaling-laws">4. Explaining scaling-law exponents</h2>
 

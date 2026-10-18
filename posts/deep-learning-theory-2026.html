@@ -72,8 +72,9 @@ wide-network theory, but they answer different questions.</p>
 K_t(x,x&#x27;) = \nabla_\theta f_{\theta_t}(x)^\top
              \nabla_\theta f_{\theta_t}(x&#x27;).
 \]</div>
-<p>With the squared loss <span class="math">\(\mathcal{L}=\frac12\sum_j(f(x_j)-y_j)^2\)</span> and gradient flow,
-the training predictions satisfy</p>
+<p>With the summed squared loss <span class="math">\(\mathcal{L}=\frac12\sum_j(f(x_j)-y_j)^2\)</span> and
+Euclidean gradient flow <span class="math">\(\dot\theta=-\nabla_\theta\mathcal{L}\)</span>, the training
+predictions satisfy</p>
 <div class="math">\[
 \frac{d f_t(x_i)}{dt}
 = -\sum_j K_t(x_i,x_j)\bigl(f_t(x_j)-y_j\bigr).
@@ -81,7 +82,9 @@ the training predictions satisfy</p>
 <p>This identity follows directly from the chain rule. Approximating <span class="math">\(K_t\)</span> by a
 fixed <span class="math">\(K_0\)</span> makes the dynamics much easier to solve. Understanding when that
 approximation fails, and how the kernel then evolves, is a central question in
-the next generation of theories.</p>
+the next generation of theories. Averaging the loss over <span class="math">\(P\)</span> samples would add
+a factor of <span class="math">\(1/P\)</span> on the right-hand side; a preconditioned optimizer would change
+the kernel governing these dynamics.</p>
 <h2 id="feature-dynamics">1. Following feature learning through time</h2>
 
 <p><strong>Dynamical mean-field theory (DMFT)</strong> replaces the description of every parameter
@@ -120,6 +123,10 @@ When it approaches a positive value, the analysis produces data-dependent
 deformations of the kernels and explicit first-order feature corrections. The
 large-depth, large-width and large-data limits do not generally commute.
 <a href="https://doi.org/10.1103/xm8d-v66z">Hanin and Zlokapa, PRL 136, 067301</a>.</p>
+<p>The <a href="https://arxiv.org/abs/2405.16630">May 2024 preprint</a> is freely available under
+the title <em>Bayesian Inference with Deep Weakly Nonlinear Networks</em>. It describes
+the calculation as a physics-level perturbative analysis and states its data
+assumptions explicitly, including fewer training samples than input dimensions.</p>
 <p><strong>What advances beyond the book:</strong> sample count joins architecture in determining
 the learning regime. This ratio is a result for the paper's shaped-network
 Bayesian setting, not a universal feature-learning threshold for SGD or Adam.</p>
@@ -129,19 +136,24 @@ Bayesian setting, not a universal feature-learning threshold for SGD or Adam.</p
 parameterization</strong>, usually written <span class="math">\(\mu\)</span>P, scales initialization and training
 hyperparameters with width so that feature updates remain meaningful. It also
 motivates tuning hyperparameters on smaller networks and transferring them to
-larger ones. The underlying infinite-width feature-learning construction dates
-to 2021.
-<a href="https://www.microsoft.com/en-us/research/blog/on-infinitely-wide-neural-networks-that-exhibit-feature-learning/">Yang and Hu's research explanation</a>.</p>
+larger ones. Yang and Hu's underlying feature-learning construction appeared as
+a November 2020 preprint and at ICML 2021, so it predates the book's publication.
+<a href="https://arxiv.org/abs/2011.14522">Feature Learning in Infinite-Width Neural Networks</a>.
+The practical hyperparameter-transfer method was developed in
+<a href="https://arxiv.org/abs/2203.03466">Tensor Programs V, 2022</a>.</p>
 <p>Recent work asks how to preserve useful learning when <strong>depth also changes</strong>.
 In <strong>CompleteP</strong>, Dey and colleagues study a parameterization that combines
 depth-wise hyperparameter transfer with non-lazy learning in all layers: feature
 changes remain meaningfully nonlinear instead of staying close to a
-linearization. Their transformer experiments report 12–34% improvements in
-compute efficiency over the compared baselines.
+linearization. For models with about 1.5 billion non-embedding parameters, the
+authors report 11.8% and 34.4% FLOP savings over <span class="math">\(\mu\)</span>P for an optimized model
+shape and a 179-layer model, respectively. These estimates use fitted
+loss-versus-compute curves; they are not measured wall-clock speedups.
 <a href="https://arxiv.org/abs/2505.01618">Don't be lazy: CompleteP enables compute-efficient deep transformers, NeurIPS 2025</a>.</p>
 <p><strong>Why this matters:</strong> the theory suggests concrete training rules. The reported
-efficiency gains belong to the paper's experiments; they are not a guaranteed
-speedup for every architecture or hardware configuration.</p>
+efficiency gains belong to the paper's experiments, which ran on Cerebras CS-3
+systems; they are not a guaranteed speedup for every architecture or hardware
+configuration.</p>
 <h2 id="scaling-laws">4. Explaining scaling-law exponents</h2>
 
 <p>A measured relation such as</p>
