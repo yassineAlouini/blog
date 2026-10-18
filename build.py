@@ -71,7 +71,7 @@ MD_POSTS = [
          subtitle="Six advances in feature learning, scaling and optimization, "
                   "with a reading guide from the book to the 2026 research frontier.",
          updated_on="2026-10-18",
-         tags=["Deep Learning Theory", "Feature Learning", "Research"],
+         tags=["WIP", "Deep Learning Theory", "Feature Learning", "Research"],
          src="_static/deep-learning-theory-2026.md",
          source=("https://arxiv.org/abs/2106.10165", "Read The Principles of Deep Learning Theory"),
          foot='Research overview · literature checked 18 October 2026 · '),
