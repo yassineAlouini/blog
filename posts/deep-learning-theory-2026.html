@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Deep Learning Theory After Roberts, Yaida &amp; Hanin</title>
+<meta name="description" content="Six advances in feature learning, scaling and optimization, with a reading guide from the book to the 2026 research frontier.">
+<link rel="stylesheet" href="../assets/style.css?v=shared-navigation-2">
+<link rel="stylesheet" href="../assets/pygments.css">
+<link rel="stylesheet" href="/assets/site-navigation.css?v=1">
+<script>window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']]},svg:{fontCache:'global'}};</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
+</head><body>
+<a class="skip-link" href="#main-content">Skip to content</a>
+<header class="site-header">
+  <a class="site-home" href="/" aria-label="Home — Yassine Alouini">Yassine Alouini</a>
+  <nav aria-label="Main navigation"><a href="/">Home</a><a href="/blog/" aria-current="location">Blog</a><a href="/sketches/">Sketchbook</a><a href="https://github.com/yassineAlouini">GitHub</a></nav>
+</header>
+
+<a class="back" href="/">← Home</a>
+<main id="main-content" tabindex="-1">
+<article>
+  <header class="post-head">
+    <div class="tags"><span class="tag tag--wip">WIP</span><span class="tag">Deep Learning Theory</span><span class="tag">Feature Learning</span><span class="tag">Research</span></div>
+    <div class="post-title-row"><h1>Deep Learning Theory After Roberts, Yaida &amp; Hanin</h1><time datetime="2026-10-18">Updated 18 October 2026</time></div>
+    <p class="subtitle">Six advances in feature learning, scaling and optimization, with a reading guide from the book to the 2026 research frontier.</p>
+    <p class="source-link"><a href="https://arxiv.org/abs/2106.10165" target="_blank" rel="noopener">Read The Principles of Deep Learning Theory</a></p>
+  </header>
+  
+  <div class="nb"><div class="md"><p class="eyebrow">Research notes · 18 October 2026</p>
+
+<p>What happened to deep learning theory after <em>The Principles of Deep Learning
+Theory</em>? The most interesting development is our growing ability to describe
+how a network's representations change during training, and to connect those
+changes to measurable outcomes: training speed, scaling with compute, and the
+usefulness of depth.</p>
+<p>Roberts, Yaida and Hanin's book offers a particular starting point. Treat a neural
+network as a system with many interacting degrees of freedom, identify a
+tractable limit, then calculate the corrections that make the system interesting.
+That statistical-physics perspective remains productive. This article follows
+six developments closest to it, rather than attempting a catalogue of every
+branch of learning theory.</p>
+<p>The dates below distinguish publication venues from the first appearance of
+preprints. A 2026 publication may develop work first circulated earlier. Each
+result also comes with a scope: which architecture, training procedure or limit
+makes its conclusions possible.</p>
+<nav aria-label="Article contents">
+<ol>
+<li><a href="#starting-point">The book's starting point</a></li>
+<li><a href="#feature-dynamics">Following feature learning through time</a></li>
+<li><a href="#depth-data-width">Depth, data and width together</a></li>
+<li><a href="#parameterization">Scaling rules that guide training</a></li>
+<li><a href="#scaling-laws">Explaining scaling-law exponents</a></li>
+<li><a href="#optimization">Optimization at the edge of stability</a></li>
+<li><a href="#in-context">When depth helps in-context learning</a></li>
+<li><a href="#reading">What to read next</a></li>
+</ol>
+</nav>
+
+<h2 id="starting-point">The book's starting point</h2>
+
+<p>In the book's setting, infinitely wide networks supply a Gaussian starting
+description. Finite-width corrections introduce interactions, while depth can
+amplify their accumulated effect. The depth-to-width ratio controls departures
+from the Gaussian description. This leads to a theory of representation
+learning, signal propagation and architectural inductive bias.
+<a href="https://arxiv.org/abs/2106.10165">The Principles of Deep Learning Theory, Cambridge University Press, 2022</a>.</p>
+<p>One distinction matters for everything that follows. A <strong>Gaussian process</strong>
+describes a distribution over functions. A <strong>neural tangent kernel</strong>, or NTK,
+describes how parameter changes affect predictions. They are related objects in
+wide-network theory, but they answer different questions.</p>
+<p>For a scalar-output network, the empirical NTK is</p>
+<div class="math">\[
+K_t(x,x&#x27;) = \nabla_\theta f_{\theta_t}(x)^\top
+             \nabla_\theta f_{\theta_t}(x&#x27;).
+\]</div>
+<p>With the summed squared loss <span class="math">\(\mathcal{L}=\frac12\sum_j(f(x_j)-y_j)^2\)</span> and
+Euclidean gradient flow <span class="math">\(\dot\theta=-\nabla_\theta\mathcal{L}\)</span>, the training
+predictions satisfy</p>
+<div class="math">\[
+\frac{d f_t(x_i)}{dt}
+= -\sum_j K_t(x_i,x_j)\bigl(f_t(x_j)-y_j\bigr).
+\]</div>
+<p>This identity follows directly from the chain rule. Approximating <span class="math">\(K_t\)</span> by a
+fixed <span class="math">\(K_0\)</span> makes the dynamics much easier to solve. Understanding when that
+approximation fails, and how the kernel then evolves, is a central question in
+the next generation of theories. Averaging the loss over <span class="math">\(P\)</span> samples would add
+a factor of <span class="math">\(1/P\)</span> on the right-hand side; a preconditioned optimizer would change
+the kernel governing these dynamics.</p>
+<h2 id="feature-dynamics">1. Following feature learning through time</h2>
+
+<p><strong>Dynamical mean-field theory (DMFT)</strong> replaces the description of every parameter
+with equations for collective quantities, including correlations of activations
+and gradients across examples and training times. These quantities determine
+the evolution of representations and predictions together.</p>
+<p>Bordelon and Pehlevan derived self-consistent equations for infinite-width
+networks that retain feature learning. Their analysis includes regimes where
+the static NTK approximation and leading-order perturbation theory fail while
+the self-consistent description remains accurate.
+<a href="https://arxiv.org/abs/2205.09653">Foundational work, first posted in 2022</a>.</p>
+<p>This is a useful correction to the intuition that infinite width necessarily
+eliminates feature learning: the outcome depends on how the network and its
+updates are scaled as width grows.</p>
+<p>The approach has also reached transformers. Bordelon, Chaudhry and Pehlevan
+analyze training limits obtained by increasing attention-head dimension, head
+count or depth. These limits can have different statistical descriptions and
+different learned features. Their model allows attention to change throughout
+training, and they test convergence to the predicted limits numerically.
+<a href="https://arxiv.org/abs/2405.15712">Infinite Limits of Multi-head Transformer Dynamics, NeurIPS 2024</a>.</p>
+<p><strong>What advances beyond the book:</strong> collective descriptions can follow substantial
+representation changes. The limits and parameterizations remain part of the
+claim; the equations are not an exact simulator of any finite transformer.</p>
+<h2 id="depth-data-width">2. Depth, data and width together</h2>
+
+<p>A particularly direct continuation is Hanin and Zlokapa's <strong>Gibbs Measures from
+Deep Shaped Multilayer Perceptrons</strong>, published in <em>Physical Review Letters</em> in
+February 2026. It studies Bayesian posteriors in networks with specially scaled
+nonlinearities using a diagrammatic, perturbative calculation.</p>
+<p>With depth <span class="math">\(L\)</span>, sample count <span class="math">\(P\)</span> and width <span class="math">\(N\)</span>, a controlling quantity is</p>
+<div class="math">\[
+\rho = \frac{LP}{N}.
+\]</div>
+<p>When <span class="math">\(\rho\)</span> tends to zero, the posteriors coincide with those of a kernel method.
+When it approaches a positive value, the analysis produces data-dependent
+deformations of the kernels and explicit first-order feature corrections. The
+large-depth, large-width and large-data limits do not generally commute.
+<a href="https://doi.org/10.1103/xm8d-v66z">Hanin and Zlokapa, PRL 136, 067301</a>.</p>
+<p>The <a href="https://arxiv.org/abs/2405.16630">May 2024 preprint</a> is freely available under
+the title <em>Bayesian Inference with Deep Weakly Nonlinear Networks</em>. It describes
+the calculation as a physics-level perturbative analysis and states its data
+assumptions explicitly, including fewer training samples than input dimensions.</p>
+<p><strong>What advances beyond the book:</strong> sample count joins architecture in determining
+the learning regime. This ratio is a result for the paper's shaped-network
+Bayesian setting, not a universal feature-learning threshold for SGD or Adam.</p>
+<h2 id="parameterization">3. Scaling rules that guide training</h2>
+
+<p>The choice of a large-network limit has practical consequences. <strong>Maximal-update
+parameterization</strong>, usually written <span class="math">\(\mu\)</span>P, scales initialization and training
+hyperparameters with width so that feature updates remain meaningful. It also
+motivates tuning hyperparameters on smaller networks and transferring them to
+larger ones. Yang and Hu's underlying feature-learning construction appeared as
+a November 2020 preprint and at ICML 2021, so it predates the book's publication.
+<a href="https://arxiv.org/abs/2011.14522">Feature Learning in Infinite-Width Neural Networks</a>.
+The practical hyperparameter-transfer method was developed in
+<a href="https://arxiv.org/abs/2203.03466">Tensor Programs V, 2022</a>.</p>
+<p>Recent work asks how to preserve useful learning when <strong>depth also changes</strong>.
+In <strong>CompleteP</strong>, Dey and colleagues study a parameterization that combines
+depth-wise hyperparameter transfer with non-lazy learning in all layers: feature
+changes remain meaningfully nonlinear instead of staying close to a
+linearization. For models with about 1.5 billion non-embedding parameters, the
+authors report 11.8% and 34.4% FLOP savings over <span class="math">\(\mu\)</span>P for an optimized model
+shape and a 179-layer model, respectively. These estimates use fitted
+loss-versus-compute curves; they are not measured wall-clock speedups.
+<a href="https://arxiv.org/abs/2505.01618">Don't be lazy: CompleteP enables compute-efficient deep transformers, NeurIPS 2025</a>.</p>
+<p><strong>Why this matters:</strong> the theory suggests concrete training rules. The reported
+efficiency gains belong to the paper's experiments, which ran on Cerebras CS-3
+systems; they are not a guaranteed speedup for every architecture or hardware
+configuration.</p>
+<h2 id="scaling-laws">4. Explaining scaling-law exponents</h2>
+
+<p>A measured relation such as</p>
+<div class="math">\[
+\mathcal{E}(C) \approx \mathcal{E}_{\infty} + A C^{-\alpha}
+\]</div>
+<p>summarizes how error changes with compute <span class="math">\(C\)</span>. A mechanism should also explain
+what determines <span class="math">\(\alpha\)</span>, and when the relation changes.</p>
+<p>In <strong>How Feature Learning Can Improve Neural Scaling Laws</strong>, Bordelon, Atanasov
+and Pehlevan analyze a solvable model beyond the fixed-kernel regime. The outcome
+depends on the target's difficulty relative to the initial kernel. For hard
+targets outside its reproducing kernel Hilbert space—the function space
+associated with that kernel—feature learning can improve the training-time and
+compute exponents. For easier targets, the exponents need not change.
+<a href="https://arxiv.org/abs/2409.17858">ICLR 2025; preprint first posted in 2024</a>.</p>
+<p><strong>What advances beyond fitting curves:</strong> representation learning can change the
+rate at which extra compute pays off. The analytical result is established in
+a simplified model, with supporting experiments on nonlinear networks. It does
+not identify one universal exponent for language-model training.</p>
+<h2 id="optimization">5. Optimization at the edge of stability</h2>
+
+<p>For gradient descent on a positive-curvature quadratic, stability requires the
+step size to be sufficiently small. Along a direction with curvature <span class="math">\(\lambda\)</span>,
+the relevant threshold is <span class="math">\(\eta\lambda=2\)</span>.</p>
+<p>Neural-network training often approaches this boundary:</p>
+<div class="math">\[
+\eta\,\lambda_{\max}(H) \approx 2,
+\]</div>
+<p>where <span class="math">\(\eta\)</span> is the learning rate and <span class="math">\(H\)</span> the loss Hessian. Loss can rise during
+individual steps as the parameters oscillate, even while longer-term training
+makes progress. Changes in curvature can feed back on those oscillations.</p>
+<p><strong>Understanding Optimization in Deep Learning with Central Flows</strong>, by Cohen,
+Damian and colleagues, develops differential equations for the time-averaged
+trajectory of oscillatory optimizers. Their predictions capture long-term
+trajectories numerically and explain how the dynamics interact with the local
+loss geometry.
+<a href="https://centralflows.github.io/">ICLR 2025 paper and illustrated explanation</a>.</p>
+<p><strong>Connection to effective theory:</strong> averaging over fast oscillations exposes
+slower dynamics that small-step gradient flow misses. The strongest demonstrations
+concern deterministic optimization; realistic stochastic training introduces
+additional questions. The threshold above is for ordinary gradient descent,
+not a universal stability formula for every optimizer.</p>
+<h2 id="in-context">6. When depth helps in-context learning</h2>
+
+<p>In-context learning adapts predictions using examples supplied in the input,
+without updating model weights. Explaining which resources make it effective
+requires separating width, depth, context length and training time.</p>
+<p>Bordelon, Letey and Pehlevan do this for regression in a deep linear
+self-attention model. Under isotropic or fixed-covariance task settings, their
+analysis finds that depth helps only when context length is limited. When
+structured covariances vary across contexts through random rotations, depth
+can remain helpful even with unlimited context. Their joint asymptotic analysis
+connects risk to model shape and computational resources.
+<a href="https://proceedings.iclr.cc/paper_files/paper/2026/hash/24d36eee157559e0d2549455fba28f6a-Abstract-Conference.html">Theory of Scaling Laws for In-Context Regression, ICLR 2026; preprint first posted in October 2025</a>.</p>
+<p><strong>Why it matters:</strong> the benefit of depth is linked to the statistical structure
+of tasks. This is a solvable model of in-context regression, not an explanation
+of all language-model reasoning.</p>
+<h2 id="reading">What to read next</h2>
+
+<p>The following map connects the questions above to a manageable reading path.</p>
+<table>
+<thead>
+<tr>
+  <th>If you want to understand…</th>
+  <th>Start with…</th>
+  <th>Keep track of…</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>The closest continuation of the book</td>
+  <td><a href="https://doi.org/10.1103/xm8d-v66z">Hanin–Zlokapa</a></td>
+  <td>Bayesian inference, shaped nonlinearities and the joint limits</td>
+</tr>
+<tr>
+  <td>Strong feature-learning dynamics</td>
+  <td><a href="https://arxiv.org/abs/2205.09653">Bordelon–Pehlevan DMFT</a></td>
+  <td>Parameterization and evolving collective quantities</td>
+</tr>
+<tr>
+  <td>Practical consequences for training</td>
+  <td><a href="https://arxiv.org/abs/2505.01618">CompleteP</a></td>
+  <td>Depth scaling, optimizer settings and the experimental scope</td>
+</tr>
+<tr>
+  <td>Why scaling exponents change</td>
+  <td><a href="https://arxiv.org/abs/2409.17858">Feature learning and scaling laws</a></td>
+  <td>Target difficulty relative to the initial kernel</td>
+</tr>
+<tr>
+  <td>Oscillatory optimization</td>
+  <td><a href="https://centralflows.github.io/">Central flows</a></td>
+  <td>Finite learning rates and deterministic versus stochastic dynamics</td>
+</tr>
+<tr>
+  <td>Why transformer depth helps</td>
+  <td><a href="https://arxiv.org/abs/2510.01098">In-context regression scaling</a></td>
+  <td>Task covariance, context length and linear attention</td>
+</tr>
+</tbody>
+</table>
+<p>For a broader map, Simon and colleagues' April 2026 perspective
+<strong><a href="https://arxiv.org/abs/2604.21691">There Will Be a Scientific Theory of Deep Learning</a></strong>
+brings together solvable models, tractable limits, macroscopic laws,
+hyperparameter theories and recurring phenomena under the proposed name
+<em>learning mechanics</em>. It is a research perspective and guide to open problems,
+rather than a completed unified theory.</p>
+<p>My reading of these results is that the field is making progress toward
+quantitative explanations of the learning process. The remaining challenge is
+to connect those explanations across regimes: from controlled models to finite
+networks, from training dynamics to generalization, and from simplified tasks to
+the representations and algorithms learned by pretrained models.</p>
+<p>Related on this blog: the
+<a href="rmt-deep-learning-series.html">Random Matrices Meet Deep Learning series roadmap</a>
+and the <a href="free-probability-deep-learning.html">Free Probability &amp; Deep Learning draft</a>
+develop the spectral tools behind several of these questions.</p>
+</div></div>
+</article>
+</main>
+<footer class="post-foot">Research overview · literature checked 18 October 2026 · built 2026-10-18</footer>
+
+</body></html>
